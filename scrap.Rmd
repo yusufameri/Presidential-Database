@@ -12,20 +12,26 @@ library(tidyr)
 library(magrittr)
 ```
 
+```{r scrape}
+library(htmltab)
 
-```{r scrap}
-old_elections <- read_html("https://www.archives.gov/federal-register/electoral-college/scores.html")
-x_path <- '/html/body/table'
+url <- "https://www.archives.gov/federal-register/electoral-college/scores.html"
 
-# store the main html table
-main_list <- old_elections %>% html_nodes(xpath = "/html/body/table") %>% html_table(fill=TRUE)
+# Access a table via below xpath
+# new_xpath <- '//tr[(((count(preceding-sibling::*) + 1) = 105) and parent::*)]//table'
 
-main_table <- as.data.frame(main_list)
+# xpath follows a specific string concatination formula. Each table is every other number from 1
+# to 105. Concatinating base1, a number, and base2, allows us to access said table on election
+table_numbers <- seq(from=1, to=105, by=2)
+base1 <- '//tr[(((count(preceding-sibling::*) + 1) = '
+base2 <- ') and parent::*)]//table'
 
-# only select the first column
-main_table <- main_table %>% filter(stringr::str_detect(X1,"^Election\\s")) %>% select(X1)
+# create xpaths for each table to scrape
+x_path <- 
+for(var in table_numbers) {
+  x_path <- paste(base1,var,base2,sep="")
+}
 
-colnames(main_table) <- c("one")
-
-main_table %>% select(one) %>% sapply(strsplit(split="\\r\\n"))
+elections <- htmltab(doc = url, which = x_path)
+head(elections)
 ```
