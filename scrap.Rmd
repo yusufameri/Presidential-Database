@@ -1,0 +1,31 @@
+---
+title: "Election Scraping"
+author: "Yusuf Ameri"
+date: "11/4/2016"
+output: html_document
+---
+
+```{r libraries}
+library(rvest)
+library(dplyr)
+library(tidyr)
+library(magrittr)
+```
+
+
+```{r scrap}
+old_elections <- read_html("https://www.archives.gov/federal-register/electoral-college/scores.html")
+x_path <- '/html/body/table'
+
+# store the main html table
+main_list <- old_elections %>% html_nodes(xpath = "/html/body/table") %>% html_table(fill=TRUE)
+
+main_table <- as.data.frame(main_list)
+
+# only select the first column
+main_table <- main_table %>% filter(stringr::str_detect(X1,"^Election\\s")) %>% select(X1)
+
+colnames(main_table) <- c("one")
+
+main_table %>% select(one) %>% sapply(strsplit(split="\\r\\n"))
+```
