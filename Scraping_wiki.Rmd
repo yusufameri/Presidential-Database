@@ -1,0 +1,148 @@
+---
+title: "Scraping Data"
+author: "Yusuf Ameri"
+date: "December 3, 2016"
+output: html_document
+---
+
+### Load Neccessary Libraries
+```{r libraries, error=FALSE, warning=FALSE,message=FALSE,results='hide'}
+library(rvest)    # for web scraping
+library(dplyr)    # for column selection
+library(tidyr)    # for column tidying
+library(magrittr) # for piping
+library(tibble)   # for pretty table printing
+library(readr)    # for converting column types
+```
+
+
+### Scrape url from Wiki
+We need to scrap an html table from wiki that has info on presidential elections and popular votes. This table only has popular vote data from 1824. Click [Here](https://en.wikipedia.org/wiki/List_of_United_States_presidential_elections_by_popular_vote_margin#List) To see the wiki yourself.
+```{r main}
+# URL of wiki of list of presidents
+url <- "https://en.wikipedia.org/wiki/List_of_United_States_presidential_elections_by_popular_vote_margin"
+
+# read URL
+president_list <- read_html(url)
+
+# Scrape following the xpath for the table
+president_table <- president_list %>% html_node(xpath = '//*[@id="mw-content-text"]/table[2]') %>% html_table()
+
+# display first 2 rows and first 4 attributes
+head(president_table[1:2,1:4])
+```
+
+As you can see above, the data table is not yet clean and has some work to do, we will first remove the first two rows which are simply headers and an empty line.
+```{r clean1}
+# remove the first 2 rows which are headers
+president_table <- president_table[3:nrow(president_table),]
+
+# display first 2 rows and first 4 attributes
+head(president_table[1:2,1:4])
+```
+
+Next, we will rename the columns so that they make sense.
+```{r rename_columns}
+# rename columns
+colnames(president_table)[1] <- "Election_Number"
+colnames(president_table)[2] <- "Election_Year"
+colnames(president_table)[3] <- "Winner"
+colnames(president_table)[4] <- "W_Party"
+colnames(president_table)[5] <- "Electoral_Proportion"
+colnames(president_table)[6] <- "Electoral_Percentage"
+colnames(president_table)[7] <- "Popular_Percentage"
+colnames(president_table)[8] <- "Popular_Margin"
+colnames(president_table)[9] <- "Winner_Votes"
+colnames(president_table)[10] <- "Winner_Votes_Margin"
+colnames(president_table)[11] <- "Runner-Up"
+colnames(president_table)[12] <- "L_Party"
+colnames(president_table)[13] <- "Turnout_pct"
+
+# store president_table as a tibble for better printing
+president_table <- tbl_df(president_table)
+
+# display president table with new column names
+head(president_table)
+```
+Things are starting to look much better. We still need to change the the datatypes of many of this columns and extract more useful attributes given what we have (for example, number of votes for losing opponent)
+
+```{r pres_str}
+# lets have a look at the datatypes in each columns
+str(president_table)
+```
+
+We need to convert Some of these column types to the right datatype
+```{r convert_cols}
+# convert column types
+president_table <- president_table %>% readr::type_convert(col_types = cols(
+  Election_Number = col_integer(),
+  W_Party = col_factor(levels(president_table$W_Party %>% as.factor())),
+  Winner = col_factor(levels(president_table$Winner %>% as.factor())),
+  `Runner-Up` = col_factor(levels(president_table$`Runner-Up` %>% as.factor())),
+  L_Party = col_factor(levels(president_table$L_Party %>% as.factor()))
+))
+```
+
+For columns with string representations of integers and percentage points, we have to strip unneccesary characters such as the percent '%' sign and division sign '/'.
+Here are some examples
+```{r examples}
+# need to get rid of / sign
+president_table$Electoral_Proportion[1]
+
+# need to get rid of % sign
+president_table$Turnout_pct[1]
+```
+
+In the process of getting rid of the 'Electoral_Proportion' Column, we will create new columns for Electoral votes won by the winning candidate and total electoral votes in the election year. It will be up to the user to query what percentage the electoral vote the winner recieved (**for now**).
+
+```{r new_columns}
+# replace electoral proportion into electoral votes won (W_Electoral_Votes) and Total_Electoral_Votes
+president_table <- 
+  president_table %>% 
+  tidyr::separate(
+    col = "Electoral_Proportion", 
+    into = c("W_Electoral_Votes", "Total_Electoral_Votes"), 
+    sep = "/")
+
+# convert those columns into integers
+president_table <- president_table %>% readr::type_convert(col_types = cols(
+  W_Electoral_Votes = col_integer(),
+  Total_Electoral_Votes = col_integer()
+))
+
+# remove the electoral percentage column
+president_table <- 
+  president_table %>% 
+    select(-Electoral_Percentage)
+
+# take a look
+president_table %>% select(Winner, W_Electoral_Votes, Total_Electoral_Votes) %>% head()
+```
+
+### Convert Voter Turnout Percentage to a Double
+```{r voter_turnout}
+# remove % sign and special characters
+president_table <- 
+  president_table %>% 
+    tidyr::separate(col="Turnout_pct",
+                    into = "Turnout_pct",
+                    sep = "%",
+                    remove = TRUE,
+                    extra = "drop")
+
+# convert voter turnout into a double and divide by 100
+president_table$Turnout_pct <- president_table$Turnout_pct %>% as.double()
+president_table <- president_table %>% mutate(Turnout_pct = Turnout_pct/100)
+```
+
+### Account for Losers Vote Count
+Instead of having a column that displays the margin of the winners victory, we would like to rather have a column that displays how many votes the losing candidate recieved. But first, however, we need to convert the column of Winner_Votes into an integer. This involves cleaning (removing commas and other characters) from each row.
+```{r loser_votes}
+# First remove commas and random characters from Winner_Votes Column
+president_table$Winner_Votes <- gsub("(\\W)","", president_table$Winner_Votes)
+
+# Next, convert to integer
+# president_table$Winner_Votes %>% as.integer()
+```
+
+
