@@ -1,0 +1,28 @@
+<html>
+<script src="javascript/jquery-3.1.1.min.js"></script>
+	<head>
+		<title>Presidential Selections</title>
+	</head>
+	<body>
+	<h1>Presidential Selections</h1>
+	<h2>Yusuf Ameri</h2>
+	<h2>Douglas Sexton</h2>
+	<input type="button" name="button" onclick="getCandidates()" value="Get Candidates" />
+	<br></br>
+	<div name="responseArea" id="response">
+		<h3>Query Results will be displayed here</h3>
+	</div>
+	</body>
+	<script>
+	function getCandidates() {
+		var clickBtnValue = 'get_candidates';
+		var ajaxurl = 'candidate.php',
+		data =  {'action': clickBtnValue};
+		$.post(ajaxurl, data, function (response) {
+			// Response div goes here.
+			document.getElementById("response").innerHTML=response;
+		});
+	}
+
+	</script>
+</html>
