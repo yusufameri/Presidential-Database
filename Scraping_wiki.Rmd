@@ -145,7 +145,9 @@ president_table$Winner_Votes <- gsub("(\\W)","", president_table$Winner_Votes)
 # president_table$Winner_Votes %>% as.integer()
 ```
 
-# ABORT, DOUG ALREAD DID ABOVE :(
+# ABORT, DOUG ALREADY DID ABOVE :(
+# This Document will be rewritten with Doug's Code to scrap a different source...
+### Below is code to scrape population/census data.
 
 ### Scrape Population/Census Table
 ```{r scrape_census}
@@ -166,7 +168,6 @@ census_table <- census_table[2:nrow(census_table),]
 ```{r strip_commas}
 census_table$Population <- gsub(",","", census_table$Population)
 ```
-
 
 
 Now lets write the table as an SQL entry file
