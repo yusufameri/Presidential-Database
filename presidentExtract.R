@@ -133,3 +133,34 @@ for (k in 1:length(candList)){
     write(sprintf("('%s'), ", candList[[k]]), fileConn, append=TRUE)
   }
 }
+
+
+
+# Scraping US Census data 1610 to 2010
+url <- 'https://en.wikipedia.org/wiki/Demographic_history_of_the_United_States#Historical_population'
+xpath <- '//*[@id="mw-content-text"]/table[2]'
+
+census <- read_html(url)
+
+census_table <- census %>% html_node(xpath = xpath) %>% html_table()
+
+# remove last row
+census_table <- census_table[2:nrow(census_table),]
+
+# pdf source: http://www2.census.gov/prod2/statcomp/documents/CT1970p2-13.pdf
+
+# strip commas from population
+census_table$Population <- gsub(",","", census_table$Population)
+
+# write the dataframe to txt for sql insertion
+fileConn <- "population.txt"
+write("INSERT INTO `population` (`year`, `population`) VALUES ", fileConn)
+for (k in 1:dim(census_table)[1]){
+  if (k == length(partyList)) {
+    write(sprintf("('%s', '%s'), ", census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
+  } else {
+    write(sprintf("('%s', '%s')", census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
+  }
+}
+
+
