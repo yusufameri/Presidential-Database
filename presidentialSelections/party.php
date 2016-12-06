@@ -43,7 +43,7 @@ function party_query($party) {
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
 
-	$sql = "SELECT * FROM party WHERE party.name=\"" . addslashes($party) . "\"";
+	$sql = "SELECT * FROM party WHERE party.name=\"" . $db->real_escape_string($party) . "\"";
 	$result = $db->query($sql);
 	
 	echo "<table border='1'>
