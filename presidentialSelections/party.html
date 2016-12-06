@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="javascript/jquery-3.1.1.min.js"></script>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Party Query</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/heroic-features.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="index.html">Presidential Selections</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="queries.html">Queries</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+
+        <!-- Jumbotron Header -->
+        <header class="jumbotron hero-spacer">
+            <h1>Party Query</h1>
+            <p>Enter a party and learn more about that party's history throughout elections.</p>
+        </header>
+
+        <hr>
+
+        <!-- Title -->
+        <div class="row">
+            <div class="col-lg-12">
+			<div id="selection_area">
+				<h3>Select your party below.</h3>
+				<!-- Selection box gets populated on window load -->
+				<div id="selectionBox"></div> 
+				<br></br>
+				<input type="button" name="button" onclick="query_party()" value="Query Party" />
+				<br></br>
+				<div name="responseArea" id="response_area">
+					<h3>Query Results will be displayed here</h3>
+				</div>
+			</div>
+
+            </div>
+        </div>
+		
+		<hr>
+        <!-- /.row -->
+
+        <!-- /.row -->
+
+        <hr>
+
+        <!-- Footer -->
+        <footer>
+            <div class="row">
+                <div class="col-lg-12">
+                    <p>Copyright &copy; Presidential Selections 2016</p>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+    <!-- /.container -->
+
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+	
+	<script>
+	window.onload = build_party_selection(); // Run this after window is loaded
+	
+	function build_party_selection() {
+		var clickBtnValue = 'build_party_selection_box';
+		var ajaxurl = 'party.php',
+		data =  {'action': clickBtnValue};
+		$.post(ajaxurl, data, function (response) {
+			// Response div goes here.
+			document.getElementById("selectionBox").innerHTML=response;
+		});
+	}
+	
+	function query_party() {
+		var clickBtnValue = 'party_query';
+		var data = document.getElementById("select_box_id").value;
+		var ajaxurl = 'party.php',
+		data =  {'action': clickBtnValue, 'data': data};
+		$.post(ajaxurl, data, function (response) {
+			// Response div goes here.
+			document.getElementById("response_area").innerHTML=response;
+		});
+	}
+	</script>
+
+</body>
+
+</html>

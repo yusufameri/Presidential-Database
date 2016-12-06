@@ -2,19 +2,16 @@
 
 if (isset($_POST['action'])) {
     switch ($_POST['action']) {
-        case 'get_candidates': // This is no longer used
-            get_candidates();
-            break;
-		case 'build_candidate_selection_box':
-			build_candidate_selection_box();
+		case 'build_party_selection_box':
+			build_party_selection_box();
 			break;
-		case 'candidate_query':
-			candidate_query($_POST['data']);
+		case 'party_query':
+			party_query($_POST['data']);
 			break;
     }
 }
 
-function get_candidates() {
+function build_party_selection_box() {
 	// The echoed statements get returned to the html
 	$user = 'root';
 	$pass = '';
@@ -22,39 +19,7 @@ function get_candidates() {
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
 
-	$sql = "SELECT * FROM `candidate` WHERE 1";
-	$result = $db->query($sql);
-	
-	echo "<table border='1'>
-	<tr>
-	<th>Name</th>
-	</tr>";
-	echo "<tr>";
-
-	if ($result->num_rows > 0) {
-		// output data of each row
-		while($row = $result->fetch_assoc()) {
-			echo "<tr>";
-			echo "<td>" . $row['name'] . "</td>";
-			echo "</tr>";
-		}
-	} else {
-			echo "<tr>";
-			echo "<td>" . "0 Results" . "</td>";
-			echo "</tr>";
-	}
-	echo "</table>";
-}
-
-function build_candidate_selection_box() {
-	// The echoed statements get returned to the html
-	$user = 'root';
-	$pass = '';
-	$db = 'presidential_elections';
-
-	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
-
-	$sql = "SELECT * FROM `candidate` WHERE 1";
+	$sql = "SELECT * FROM `party` WHERE 1";
 	$result = $db->query($sql);
 	
 	echo "<select id='select_box_id'>";
@@ -70,7 +35,7 @@ function build_candidate_selection_box() {
 	echo "</select>";
 }
 
-function candidate_query($candidate) {
+function party_query($party) {
 	// The echoed statements get returned to the html
 	$user = 'root';
 	$pass = '';
@@ -78,7 +43,7 @@ function candidate_query($candidate) {
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
 
-	$sql = "SELECT * FROM candidate WHERE candidate.name=\"" . $db->real_escape_string($candidate) . "\"";
+	$sql = "SELECT * FROM party WHERE party.name=\"" . addslashes($party) . "\"";
 	$result = $db->query($sql);
 	
 	echo "<table border='1'>
