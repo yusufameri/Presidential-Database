@@ -1,0 +1,22 @@
+---
+title: "Data Sources"
+author: "Yusuf Ameri, Doug Sexton"
+date: "December 6, 2016"
+output: html_document
+---
+
+# Sources
+
+### Presidential Candidates and Outcomes Data
+## TODO
+
+### Party Data
+## TODO
+
+### Population Data
+We used data that was aquired from
+[this](https://en.wikipedia.org/wiki/Demographic_history_of_the_United_States#Historical_population) wikipedia page. This data was aquired from a document from the Federal Census Bureau in 2004 (p. 1168).
+Click [here](http://www2.census.gov/prod2/statcomp/documents/CT1970p2-13.pdf) for the link to that document.
+
+### Polling Data
+## TODO
