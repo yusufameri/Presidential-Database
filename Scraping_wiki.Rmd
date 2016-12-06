@@ -175,8 +175,8 @@ Now lets write the table as an SQL entry file
 # Now let's write the census to a file as a sql command
 fileConn <- "population.txt"
 write("INSERT INTO `population` (`year`, `population`) VALUES ", fileConn)
-for (k in 1:dim(census_table)[1]){
-  if (k == length(partyList)) {
+for (k in 1:nrow(census_table)){
+  if (k < nrow(census_table)) {
     write(sprintf("('%s', '%s'), ", census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
   } else {
     write(sprintf("('%s', '%s')", census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
