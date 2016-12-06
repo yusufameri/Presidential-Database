@@ -184,3 +184,10 @@ for (k in 1:nrow(census_table)){
 }
 ```
 
+
+### Scrape Gallop Polling Data
+```{r}
+expectation_polls <- read.csv("historical_national_expectation_polls.csv",header = TRUE)
+intention_polls <- read.csv("historical_national_intention_polls.csv",header = TRUE)
+```
+
