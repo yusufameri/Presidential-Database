@@ -17,7 +17,7 @@ if (isset($_POST['action'])) {
 function get_candidates() {
 	// The echoed statements get returned to the html
 	$user = 'root';
-	$pass = '';
+	$pass = 'root';
 	$db = 'presidential_elections';
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
@@ -49,7 +49,7 @@ function get_candidates() {
 function build_candidate_selection_box() {
 	// The echoed statements get returned to the html
 	$user = 'root';
-	$pass = '';
+	$pass = 'root';
 	$db = 'presidential_elections';
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
@@ -73,7 +73,7 @@ function build_candidate_selection_box() {
 function candidate_query($candidate) {
 	// The echoed statements get returned to the html
 	$user = 'root';
-	$pass = '';
+	$pass = 'root';
 	$db = 'presidential_elections';
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");

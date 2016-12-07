@@ -14,7 +14,7 @@ if (isset($_POST['action'])) {
 function build_year_selection_box() {
 	// The echoed statements get returned to the html
 	$user = 'root';
-	$pass = '';
+	$pass = 'root';
 	$db = 'presidential_elections';
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
@@ -38,7 +38,7 @@ function build_year_selection_box() {
 function year_query($year) {
 	// The echoed statements get returned to the html
 	$user = 'root';
-	$pass = '';
+	$pass = 'root';
 	$db = 'presidential_elections';
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
