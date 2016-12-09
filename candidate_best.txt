@@ -1,5 +1,5 @@
 DROP TABLE candidate;
-CREATE TABLE presidential_elections.candidate ( name VARCHAR(64) NOT NULL , birth_date DATE , death_date DATE , image_url VARCHAR(128) );
+CREATE TABLE presidential_elections.candidate ( name VARCHAR(64) NOT NULL , birth_date DATE , death_date DATE , image_url VARCHAR(256) );
 INSERT INTO candidate (name, birth_date, death_date, image_url) VALUES 
 ('Aaron Burr', '1756-02-06', '1836-09-14', '//upload.wikimedia.org/wikipedia/commons/b/b5/Burr.jpg'),
 ('Aaron Watkins', NULL, NULL, '//upload.wikimedia.org/wikipedia/commons/6/67/Aaron_S._Watkins_%28LOC%29.jpg'),
@@ -20,7 +20,7 @@ INSERT INTO candidate (name, birth_date, death_date, image_url) VALUES
 ('Andrew Jackson', '1767-03-15', '1845-06-08', '//upload.wikimedia.org/wikipedia/commons/d/d8/Andrew_Jackson_Daguerrotype-crop.jpg'),
 ('Andrew Johnson', '1808-12-29', '1875-07-31', '//upload.wikimedia.org/wikipedia/commons/c/ce/President_Andrew_Johnson.jpg'),
 ('Art Olivier', '1957-08-24', NULL, '//upload.wikimedia.org/wikipedia/commons/c/c3/Art_Olivier_%28105415391%29_%28cropped%29.jpg'),
-('Arthur Sewall', '1835-11-25', '1900-09-05', 'upload.wikimedia.org/wikipedia/commons/a/aa/ArthurSewall.png'),
+('Arthur Sewall', '1835-11-25', '1900-09-05', '//upload.wikimedia.org/wikipedia/commons/a/aa/ArthurSewall.png'),
 ('B. Gratz Brown', '1826-05-28', '1885-12-13', '//upload.wikimedia.org/wikipedia/commons/9/93/Greeley-Brown-1872.jpg'),
 ('Barack Obama', '1961-08-04', NULL, '//upload.wikimedia.org/wikipedia/commons/8/8d/President_Barack_Obama.jpg'),
 ('Barry Commoner', '1917-05-28', '2012-09-30', '//upload.wikimedia.org/wikipedia/en/9/9a/Barry_Commoner.jpg'),
