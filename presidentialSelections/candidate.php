@@ -80,26 +80,19 @@ function candidate_query($candidate) {
 
 	$sql = "SELECT * FROM candidate WHERE candidate.name=\"" . $db->real_escape_string($candidate) . "\"";
 	$result = $db->query($sql);
-	
-	echo "<table border='1'>
-	<tr>
-	<th>Name</th>
-	</tr>";
-	echo "<tr>";
 
 	if ($result->num_rows > 0) {
-		// output data of each row
+		// output data of each row (should just be 1 row)
 		while($row = $result->fetch_assoc()) {
-			echo "<tr>";
-			echo "<td>" . $row['name'] . "</td>";
-			echo "</tr>";
+			echo "<h1>" . $row['name'] . "</h1>";
+			$bday = (empty($row['birth_date'])) ? "?" : $row['birth_date'];
+			$dday = (empty($row['death_date'])) ? "?" : $row['death_date'];
+			echo "<h2>" . $bday . " - " . $dday . "</h2>";
+			echo "<img src=\"" . $row['image_url'] . "\">";
 		}
 	} else {
-			echo "<tr>";
-			echo "<td>" . "0 Results" . "</td>";
-			echo "</tr>";
+			echo "<h1>No Result Found</h1>";
 	}
-	echo "</table>";
 }
 
 ?>
