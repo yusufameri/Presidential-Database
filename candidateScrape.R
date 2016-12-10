@@ -3,7 +3,7 @@ candidates = read.csv("candidate.csv", header=F, sep=",", stringsAsFactors=FALSE
 baseUrl = "http://www.google.com/search?q="
 
 candidateFile <- "candidate2.txt" # The candidate file to write
-write("DROP TABLE candidate;", candidateFile)
+write("DROP TABLE IF EXISTS `candidate`;", candidateFile)
 write("CREATE TABLE presidential_elections.candidate ( name VARCHAR(64) NOT NULL , birth_date DATE , death_date DATE , image_url VARCHAR(128) );", candidateFile, append=T)
 write("INSERT INTO candidate (name, birth_date, death_date, image_url) VALUES ", candidateFile, append=T)
 

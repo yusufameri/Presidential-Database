@@ -1,4 +1,4 @@
-DROP TABLE candidate;
+DROP TABLE IF EXISTS `candidate`;
 CREATE TABLE presidential_elections.candidate ( name VARCHAR(64) NOT NULL , birth_date DATE , death_date DATE , image_url VARCHAR(256) );
 INSERT INTO candidate (name, birth_date, death_date, image_url) VALUES 
 ('Aaron Burr', '1756-02-06', '1836-09-14', '//upload.wikimedia.org/wikipedia/commons/b/b5/Burr.jpg'),
@@ -167,7 +167,7 @@ INSERT INTO candidate (name, birth_date, death_date, image_url) VALUES
 ('John Edwards', '1953-06-10', NULL, '//upload.wikimedia.org/wikipedia/commons/c/c2/John_Edwards%2C_official_Senate_photo_portrait.jpg'),
 ('John F. Kennedy', '1917-05-29', '1963-11-22', '//upload.wikimedia.org/wikipedia/commons/9/99/JFK_WHPO.tif/lossy-page1-220px-JFK_WHPO.tif.jpg'),
 ('John Floyd', '1783-04-24', '1837-08-17', '//upload.wikimedia.org/wikipedia/commons/2/2e/Johnfloydvirginia.jpg'),
-('John Frémont', '1813-01-21', '1890-07-13', '//upload.wikimedia.org/wikipedia/commons/6/67/JCFr%C3%A9mont.jpg'),
+('John Fr?mont', '1813-01-21', '1890-07-13', '//upload.wikimedia.org/wikipedia/commons/6/67/JCFr%C3%A9mont.jpg'),
 ('John Garner', '1868-11-22', '1967-11-07', '//upload.wikimedia.org/wikipedia/commons/e/ed/JNGarner.jpg'),
 ('John Hale', '1806-03-31', '1873-11-19', '//upload.wikimedia.org/wikipedia/commons/d/da/JP-Hale.jpg'),
 ('John Hancock', '1737-01-23', '1793-10-08', '//upload.wikimedia.org/wikipedia/commons/a/a4/John_Hancock_1770-crop.jpg'),
