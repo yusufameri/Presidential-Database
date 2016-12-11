@@ -264,13 +264,169 @@ selectGoodColumns <- function(df.name, list.of.columns) {
 
 # national expectation polls 2016
 national_expectation_polls.2016 <- selectGoodColumns(national_expectation_polls.2016)
+national_expectation_polls.2016 <- national_expectation_polls.2016 %>% mutate(pollType = "expectation")
 
 # national intention polls 2016
 national_intention_polls.2016 <- selectGoodColumns(national_intention_polls.2016)
+national_intention_polls.2016 <- national_intention_polls.2016 %>% mutate(pollType = "intention")
 
 # national expectation polls historical (1940 - 2012)
 national_expectation_polls.historic <- selectGoodColumns(national_expectation_polls.historic)
+national_expectation_polls.historic <- national_expectation_polls.historic %>% mutate(pollType = "expectation")
 
 # national intention polls historical (1940 - 2012)
 national_intention_polls.historic <- selectGoodColumns(national_intention_polls.historic)
+national_intention_polls.historic <- national_intention_polls.historic %>% mutate(pollType = "intention")
 ```
+
+### Convert some columns before sql insertion
+```{r }
+# national expectation polls 2016
+national_expectation_polls.2016 <- 
+  national_expectation_polls.2016 %>% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format="%d.%m.%Y"),
+    lastsurveyday = col_datetime(format="%d.%m.%Y"),
+    firstsurveyday = col_datetime(format="%d.%m.%Y"),
+    released = col_datetime(format="%d.%m.%Y")
+))
+
+# national intention polls 2016
+national_intention_polls.2016 <- 
+  national_intention_polls.2016 %>% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format="%d.%m.%Y"),
+    lastsurveyday = col_datetime(format="%d.%m.%Y"),
+    firstsurveyday = col_datetime(format="%d.%m.%Y"),
+    released = col_datetime(format="%d.%m.%Y")
+))
+
+# national expectation polls historical (1940 - 2012)
+national_expectation_polls.historic <- 
+  national_expectation_polls.historic %>% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format="%d.%m.%Y"),
+    lastsurveyday = col_datetime(format="%d.%m.%Y"),
+    firstsurveyday = col_datetime(format="%d.%m.%Y"),
+    released = col_datetime(format="%d.%m.%Y")
+))
+
+# national intention polls historical (1940 - 2012)
+national_intention_polls.historic <- 
+  national_intention_polls.historic %>% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format="%d.%m.%Y"),
+    lastsurveyday = col_datetime(format="%d.%m.%Y"),
+    firstsurveyday = col_datetime(format="%d.%m.%Y"),
+    released = col_datetime(format="%d.%m.%Y")
+))
+```
+
+## Build the SQL file
+We will know loop through the four dataframes we have created convert the rows into mysql insert statements as well as define/create the relation for the table we will need (polls).
+```{r sqlPolls}
+pollsFile <- "polls.txt"
+write("DROP TABLE IF EXISTS `polls`;", pollsFile)
+write("CREATE TABLE presidential_elections.polls (election_year VARCHAR(64) NOT NULL, 
+                                                  fc_date DATE, 
+                                                  days_to_election DATE, 
+                                                  fc_repvs FLOAT,
+                                                  fc_demvs FLOAT,
+                                                  fc_error FLOAT,
+                                                  fc_absolute_error FLOAT,
+                                                  last_survey_day DATE,
+                                                  first_survey_day DATE,
+                                                  release_day DATE,
+                                                  sample INTEGER,
+                                                  moe FLOAT,
+                                                  question TEXT,
+                                                  survey_org VARCHAR(64),
+                                                  survey_sponser VARCHAR(64),
+                                                  intmethod VARCHAR(30),
+                                                  sample_desc TEXT,
+                                                  state VARCHAR(40),
+                                                  poll_type VARCHAR(15));", 
+                                                  pollsFile,
+                                                  append = TRUE)
+write("INSERT INTO polls (                        election_year, 
+                                                  fc_date, 
+                                                  days_to_election, 
+                                                  fc_repvs,
+                                                  fc_demvs,
+                                                  fc_error,
+                                                  fc_absolute_error,
+                                                  last_survey_day,
+                                                  first_survey_day,
+                                                  release_day,
+                                                  sample,
+                                                  moe,
+                                                  question,
+                                                  survey_org,
+                                                  survey_sponser,
+                                                  intmethod,
+                                                  sample_desc,
+                                                  state,
+                                                  poll_type) VALUES ", pollsFile, append=TRUE)
+```
+### Write the values
+```{r}
+# function to write the tuples of each dataframe (df) to the polls.txt file
+writeFD <- function(df) {
+    for(i in 1:nrow(df)) {
+      electionyear <-   df$electionyear
+      fcdate <-         df$fcdate
+      daystoelection <- df$daystoelection
+      fcrepvs <-        df$fcrepvs
+      fcdemvs <-        df$fcdemvs
+      fcerror <-        df$fcerror
+      absolutefcerror <-df$absolutefcerror
+      lastsurveyday <-  df$lastsurveyday
+      firstsurveyday <- df$firstsurveyday
+      released <-       df$released
+      sample <-         df$sample
+      moe <-            df$moe
+      questiontxt <-    df$questiontxt
+      surveyorg <-      df$surveyorg
+      surveysponsor <-  df$surveysponsor
+      intmethod <-      df$intmethod
+      sampledesc <-     df$sampledesc
+      state <-          df$state
+      inttype <-        df$pollType
+    
+      # replace the NAs with NULL and sprintf into apporpriate format
+      write(
+      gsub(x = sprintf(
+      "('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'),",
+                    electionyear[i],
+                    fcdate[i],
+                    daystoelection[i],
+                    fcrepvs[i],
+                    fcdemvs[i],
+                    fcerror[i],
+                    absolutefcerror[i],
+                    lastsurveyday[i],
+                    firstsurveyday[i],
+                    released[i],
+                    sample[i],
+                    moe[i],
+                    questiontxt[i],
+                    surveyorg[i],
+                    surveysponsor[i],
+                    intmethod[i],
+                    sampledesc[i],
+                    state[i],
+                    inttype[i]),
+      pattern="NA",
+      replacement = "NULL"),
+      pollsFile, append=TRUE)
+    }
+}
+
+writeFD(national_expectation_polls.2016)
+writeFD(national_intention_polls.2016)
+writeFD(national_expectation_polls.historic)
+writeFD(national_intention_polls.historic)
+```
+
+### We should replace all of those NAs with NULL for SQL purposes
+```{r}
+
+```
+
+
