@@ -185,9 +185,92 @@ for (k in 1:nrow(census_table)){
 ```
 
 
-### Scrape Gallop Polling Data
+# Scraping Polling Data
+### Original API sources for csv files.
+We are getting our sources from [pollyvote.com](https://pollyvote.com/en/about/data/). Below is the list of URLs for API calls to get the csv for our data. Note that data for polls is only available from the 1940 election (that is when polling data became widely available and popular).
 ```{r}
-expectation_polls <- read.csv("historical_national_expectation_polls.csv",header = TRUE)
-intention_polls <- read.csv("historical_national_intention_polls.csv",header = TRUE)
+# national expectation polls 2016
+nep16 <- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?time=current&type=expectations&format=csv' 
+
+# national intention polls 2016
+nip16 <- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?time=current&type=polls&format=csv'
+
+# national expectation polls historical (1940 - 2012)
+neph <- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?type=expectations&format=csv'
+
+# national intention polls historical (1940 - 2012)
+niph <- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?type=polls&format=csv'
 ```
 
+### Import/Download the csv from these URLs
+```{r importCSV}
+# filename: the name you want to download and save the csv as.
+# df.name: the name of the dataframe for the csv you want
+# source.URL: the url source that we download from
+download_polls <- function(filename, df.name, source.URL) {
+  if (!file.exists(filename)) {
+    download.file(source.URL, destfile=filename)
+  }
+  assign(x = df.name, value = read_csv(filename), envir = .GlobalEnv)
+}
+```
+
+**call the function above on all the polling data we want**
+```{r}
+# national expectation polls 2016
+download_polls(filename = '2016_national_expectation_polls.csv', 
+               df.name = 'national_expectation_polls.2016',
+               source.URL = nep16)
+
+# national intention polls 2016
+download_polls(filename = '2016_national_intention_polls.csv', 
+               df.name = 'national_intention_polls.2016',
+               source.URL = nip16)
+
+# national expectation polls historical (1940 - 2012)
+download_polls(filename = 'historic_national_expectation_polls.csv', 
+               df.name = 'national_expectation_polls.historic',
+               source.URL = neph)
+
+# national intention polls historical (1940 - 2012)
+download_polls(filename = 'historic_national_intention_polls.csv', 
+               df.name = 'national_intention_polls.historic',
+               source.URL = niph)
+```
+
+### Only select the columns we care about
+```{r selectGoodColumns}
+# selects only relevant/good columns from the initial list of 43 columns that we get from the csv
+selectGoodColumns <- function(df.name, list.of.columns) {
+                              df.name %>% select(c(electionyear, 
+                                                   fcdate,              # forecast date
+                                                   daystoelection,      # the number of days until the election
+                                                   fcrepvs,             # republican voter share
+                                                   fcdemvs,             # democratic voter share
+                                                   fcerror,             # forecase error (Forecast – Actual)
+                                                   absolutefcerror,     # absolute forecast error
+                                                   lastsurveyday,       # last day survey was conducted
+                                                   firstsurveyday,      # first day survey was conducted
+                                                   released,            # date survey was released
+                                                   sample,              # sample size of survey
+                                                   moe,                 # margin of error of survey
+                                                   questiontxt,         # question text description of survey
+                                                   surveyorg,           # survey organization
+                                                   surveysponsor,       # survey sponsor
+                                                   intmethod,           # interview method
+                                                   sampledesc,          # information about the sample of respondents
+                                                   state))
+}
+
+# national expectation polls 2016
+national_expectation_polls.2016 <- selectGoodColumns(national_expectation_polls.2016)
+
+# national intention polls 2016
+national_intention_polls.2016 <- selectGoodColumns(national_intention_polls.2016)
+
+# national expectation polls historical (1940 - 2012)
+national_expectation_polls.historic <- selectGoodColumns(national_expectation_polls.historic)
+
+# national intention polls historical (1940 - 2012)
+national_intention_polls.historic <- selectGoodColumns(national_intention_polls.historic)
+```
