@@ -21,7 +21,7 @@ function win_wo_pop_query() {
 	$result = $db->query($sql);
 	
 	// Make the winner table
-	echo "<table border='1'>
+	echo "<table border='1' align='center'>
 	<tr>
 	<th style=\"text-align:center\">Election Year</th>
 	<th style=\"text-align:center\">Winning Candidate</th>

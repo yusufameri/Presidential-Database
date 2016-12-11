@@ -21,7 +21,7 @@ function non_contiguous_election_query() {
 	$result = $db->query($sql);
 	
 	// Make the winner table
-	echo "<table border='1'>
+	echo "<table border='1' align='center'>
 	<tr>
 	<th style=\"text-align:center\">Candidate</th>
 	<th style=\"text-align:center\">Before Election Number</th>
