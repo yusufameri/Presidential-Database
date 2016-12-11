@@ -337,7 +337,7 @@ write("CREATE TABLE presidential_elections.polls (election_year VARCHAR(64) NOT 
                                                   moe FLOAT,
                                                   question TEXT,
                                                   survey_org VARCHAR(64),
-                                                  survey_sponser VARCHAR(64),
+                                                  survey_sponser VARCHAR(128),
                                                   intmethod VARCHAR(30),
                                                   sample_desc TEXT,
                                                   state VARCHAR(40),
@@ -381,13 +381,13 @@ writeFD <- function(df) {
       released <-       df$released
       sample <-         df$sample
       moe <-            df$moe
-      questiontxt <-    df$questiontxt
-      surveyorg <-      df$surveyorg
-      surveysponsor <-  df$surveysponsor
-      intmethod <-      df$intmethod
-      sampledesc <-     df$sampledesc
+      questiontxt <-    gsub(x = df$questiontxt, pattern = "\'", replacement = "")
+      surveyorg <-      gsub(x = df$surveyorg, pattern = "\'", replacement = "")
+      surveysponsor <-  gsub(x = df$surveysponsor, pattern = "\'", replacement = "")
+      intmethod <-      gsub(x = df$intmethod, pattern = "\'", replacement = "")
+      sampledesc <-     gsub(x = df$sampledesc, pattern = "\'", replacement = "")
       state <-          df$state
-      inttype <-        df$pollType
+      pollType <-       df$pollType
     
       # replace the NAs with NULL and sprintf into apporpriate format
       write(
@@ -411,7 +411,7 @@ writeFD <- function(df) {
                     intmethod[i],
                     sampledesc[i],
                     state[i],
-                    inttype[i]),
+                    pollType[i]),
       pattern="NA",
       replacement = "NULL"),
       pollsFile, append=TRUE)
@@ -423,10 +423,5 @@ writeFD(national_intention_polls.2016)
 writeFD(national_expectation_polls.historic)
 writeFD(national_intention_polls.historic)
 ```
-
-### We should replace all of those NAs with NULL for SQL purposes
-```{r}
-
-```
-
-
+## Wola! We are done!
+Just a note: at the end of the text file you should remove the last comma and replace it with a semicolon.
