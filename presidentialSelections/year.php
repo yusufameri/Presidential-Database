@@ -47,11 +47,11 @@ function year_query($year) {
 	$result = $db->query($sql);
 	
 	// Make the winner table
-	echo "<table border='1'>
+	echo "<table border='1' align='center'>
 	<tr>
-	<th>Year</th>
-	<th>Election Number</th>
-	<th>Winner</th>
+	<th style=\"text-align:center\">Year</th>
+	<th style=\"text-align:center\">Election Number</th>
+	<th style=\"text-align:center\">Winner</th>
 	</tr>";
 	echo "<tr>";
 
@@ -77,13 +77,13 @@ function year_query($year) {
 	$sql = "SELECT * FROM participated WHERE participated.year=\"" . $db->real_escape_string($year) . "\"";
 	$result = $db->query($sql);
 	echo "<br></br>";
-	echo "<table border='1'>
+	echo "<table border='1' align='center'>
 	<tr>
-	<th>Candidate</th>
-	<th>Party</th>
-	<th>Electoral Vote</th>
-	<th>Popular Vote</th>
-	<th>Vice President</th>
+	<th style=\"text-align:center\">Candidate</th>
+	<th style=\"text-align:center\">Party</th>
+	<th style=\"text-align:center\">Electoral Vote</th>
+	<th style=\"text-align:center\">Popular Vote</th>
+	<th style=\"text-align:center\">Vice President</th>
 	</tr>";
 	echo "<tr>";
 

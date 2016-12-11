@@ -10,7 +10,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Year Query</title>
+    <title>Win After Loss Query</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -60,8 +60,8 @@
 
         <!-- Jumbotron Header -->
         <header class="jumbotron hero-spacer">
-            <h1>Year Query</h1>
-            <p>Enter a year and learn more about the election that occured that year (Popular vote data is not availble until 1824).</p>
+            <h1>Win After Loss Query</h1>
+            <p>Find which candidates won an election after previously making a run for president and losing.</p>
         </header>
 
         <hr>
@@ -70,11 +70,7 @@
         <div class="row">
             <div class="col-lg-12">
 			<div id="selection_area">
-				<h3>Select your year below.</h3>
-				<!-- Selection box gets populated on window load -->
-				<div id="selectionBox"></div> 
-				<br></br>
-				<input type="button" name="button" onclick="query_year()" value="Query Year" />
+				<input type="button" name="button" onclick="query_win_after_loss()" value="Query Win After Loss" />
 				<br></br>
 				<hr>
 				<div name="responseArea" id="response_area">
@@ -108,23 +104,10 @@
     <script src="js/bootstrap.min.js"></script>
 	
 	<script>
-	window.onload = build_year_selection(); // Run this after window is loaded
-	
-	function build_year_selection() {
-		var clickBtnValue = 'build_year_selection_box';
-		var ajaxurl = 'year.php',
+	function query_win_after_loss() {
+		var clickBtnValue = 'win_after_loss';
+		var ajaxurl = 'win_after_loss.php',
 		data =  {'action': clickBtnValue};
-		$.post(ajaxurl, data, function (response) {
-			// Response div goes here.
-			document.getElementById("selectionBox").innerHTML=response;
-		});
-	}
-	
-	function query_year() {
-		var clickBtnValue = 'year_query';
-		var data = document.getElementById("select_box_id").value;
-		var ajaxurl = 'year.php',
-		data =  {'action': clickBtnValue, 'data': data};
 		$.post(ajaxurl, data, function (response) {
 			// Response div goes here.
 			document.getElementById("response_area").innerHTML=response;

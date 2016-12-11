@@ -20,7 +20,7 @@ function swing_query() {
 	$result = $db->query($sql);
 	
 	// Make the winner table
-	echo "<table border='1'>
+	echo "<table border='1' align='center'>
 	<tr>
 	<th>Year</th>
 	<th>Candidate</th>
