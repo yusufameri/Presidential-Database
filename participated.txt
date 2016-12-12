@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `participated`;
 INSERT INTO `participated` (`year`, `candidate`, `party`, `electoral_vote`, `popular_vote`, `vice_president`) VALUES 
 ('2012', 'Barack Obama', 'Democratic', '332', '65899660', 'Joe Biden'), 
 ('2012', 'Mitt Romney', 'Republican', '206', '60932152', 'Paul Ryan'), 

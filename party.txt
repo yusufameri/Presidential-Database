@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `party`;
 INSERT INTO `party` (`name`) VALUES 
 ('Democratic'), 
 ('Republican'), 

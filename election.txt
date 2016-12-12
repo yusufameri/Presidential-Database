@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `election`;
 INSERT INTO `election` (`year`, `winner`, `num`) VALUES 
 ('2012', 'Barack Obama', '57'), 
 ('2008', 'Barack Obama', '56'), 

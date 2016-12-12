@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `candidate`;
 INSERT INTO `candidate` (`name`) VALUES 
 ('Barack Obama'), 
 ('Joe Biden'), 

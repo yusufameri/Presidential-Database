@@ -13,12 +13,12 @@ CREATE TABLE presidential_elections.polls (election_year VARCHAR(64) NOT NULL,
                                                   moe FLOAT,
                                                   question TEXT,
                                                   survey_org VARCHAR(64),
-                                                  survey_sponser VARCHAR(64),
+                                                  survey_sponser VARCHAR(128),
                                                   intmethod VARCHAR(30),
                                                   sample_desc TEXT,
                                                   state VARCHAR(40),
                                                   poll_type VARCHAR(15));
-INSERT INTO polls (election_year, 
+INSERT INTO polls (                               election_year, 
                                                   fc_date, 
                                                   days_to_election, 
                                                   fc_repvs,
@@ -3046,4 +3046,5 @@ INSERT INTO polls (election_year,
 ('1940','1940-08-07','90','51.1','48.9','2.5','2.5','1940-08-02','1940-08-07','1940-08-01','1500','NULL','If the Presidential election were held today, would you vote for the Republican candidate, Willkie, or the Democratic candidate, Roosevelt?','Gallup Organization','NULL','personal','national adult','National','intention'),
 ('1940','1940-07-26','102','49.4','50.6','4.2','4.2','1940-07-21','1940-07-26','1940-08-05','1500','NULL','If the presidential election were held today, would you vote for The Republican candidate, Wendell Willkie, or the Democratic candidate, Franklin Roosevelt?','Gallup Organization','NULL','personal','national adult','National','intention'),
 ('1940','1940-07-26','102','50.6','49.4','3','3','1940-07-21','1940-07-26','1940-07-01','1500','NULL','If the Presidential election were held today, would you vote for the Republican ticket of Willkie and McNary, or the Democratic ticket of Roosevelt and Wallace?','Gallup Organization','NULL','personal','national adult','National','intention'),
-('1940','1940-07-23','105','49.4','50.6','4.2','4.2','1940-07-18','1940-07-23','1940-08-01','1500','NULL','If the Presidential election were held today, would you vote for the Republican candidate, Willkie, or the Democratic candidate, Roosevelt?','Gallup Organization','NULL','personal','national adult','National','intention')
+('1940','1940-07-23','105','49.4','50.6','4.2','4.2','1940-07-18','1940-07-23','1940-08-01','1500','NULL','If the Presidential election were held today, would you vote for the Republican candidate, Willkie, or the Democratic candidate, Roosevelt?','Gallup Organization','NULL','personal','national adult','National','intention');
+
