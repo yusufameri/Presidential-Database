@@ -5,151 +5,183 @@ date: "December 3, 2016"
 output: html_document
 ---
 
-### Load Neccessary Libraries
-```{r libraries, error=FALSE, warning=FALSE,message=FALSE,results='hide'}
-library(rvest)    # for web scraping
-library(dplyr)    # for column selection
-library(tidyr)    # for column tidying
-library(magrittr) # for piping
-library(tibble)   # for pretty table printing
-library(readr)    # for converting column types
+# Document Information
+The following document describes how we obtained and went through the **ETL** process to create the following files:
+
+* election.txt (use this one)
+* participated.txt (use this one)
+* party.txt (use this one)
+* candidate.txt (use this one)
+* population.txt
+* population.txt (use this one)
+* polls.txt (use this one)
+
+### Files not made by this document
+Some files are not made in this document and are instead made by hand or in other R scrip files such as ...
+
+* population_best.txt
+* candidate_best.txt
+
+# Doug's Scraping for Election, Participated, Party, and Candidate
+The following chunk below makes the **election.txt** file with the **election** relation, as well as the **participated.txt** file with the **participated** relation.
+
+* election.txt (use this one)
+* participated.txt (use this one)
+* party.txt (use this one)
+* candidate.txt (NOT USED)
+
+```{r dougFiles}
+library(rvest)
+library(readr)
+library(dplyr)
+library(tidyr)
+#url <- "http://2012election.procon.org/view.resource.php?resourceID=004332"
+#webpage <- read_html(url)
+webpage <- read_html("PresElectHist.html") # Make sure this file is in your working directory!
+p_table <- html_nodes(webpage, 'table')
+p <- p_table[[18]]
+g <- html_table(p, fill=TRUE, trim=TRUE)
+names(g) <- c("Year", "Candidates", "Parties", "Electoral Votes", "Popular Votes", "VPs")
+g <- g[(1:6)] # Get rid of 4 extraneous columns
+g <- g[grepl("\\([[:digit:]]", g$Candidates),] # Get rows of candidates with open parenthesis followed by number
+
+candList<-list() # These lists are used to make a set of the candidates and parties
+partyList<-list()
+
+electionFile <- "election.txt" # The election and participated files
+participatedFile <- "participated.txt"
+
+# drop if tables exist
+write("DROP TABLE IF EXISTS `election`;", electionFile)
+write("DROP TABLE IF EXISTS `participated`;", participatedFile, append = TRUE)
+
+# Write initial sql text to file
+write("INSERT INTO `election` (`year`, `winner`, `num`) VALUES ", electionFile, append = TRUE)
+write("INSERT INTO `participated` (`year`, `candidate`, `party`, `electoral_vote`, `popular_vote`, `vice_president`) VALUES ", 
+      participatedFile, 
+      append = TRUE)
+
+elecNum <- 57 # Hard coded value for number of elections
+
+for(i in 1:nrow(g)) {
+  row <- g[i,]
+  candidates <- strsplit(row$Candidates, "\n")
+  parties <- strsplit(row$Parties, "\n")
+  electoralVotes <- strsplit(row$`Electoral Votes`, "\n")
+  popularVotes <- strsplit(row$`Popular Votes`, "\n")
+  vicePresidents <- strsplit(row$VPs, "\n")
+  for (j in 1:length(candidates[[1]])) {
+    pop <- ""
+    vp <- ""
+    # Popular votes and vp might not exist
+    if (j <= length(popularVotes[[1]])) {
+      pop <- (popularVotes[[1]][j])
+    } else {
+      pop <- ("NULL")
+    }
+    
+    if (j <= length(vicePresidents[[1]])) {
+      vp <- (vicePresidents[[1]][j])
+    } else {
+      vp<- ("NULL")
+    }
+    
+    # Now clean up names to get rid of parenthesis
+    cleanCandidate <- strsplit(candidates[[1]][j], " \\(")[[1]][1] # Get rid of end parenthesis
+    cleanCandidate <- strsplit(cleanCandidate, "\\*")[[1]][1] # Get rid of trailing asterisks
+    cleanCandidate <- trimws(cleanCandidate) # Get rid of leading and trailing whitespace
+    cleanCandidate <- gsub("\'", "\\\\\'", cleanCandidate) # Escape ' character for sql
+    vp <- strsplit(vp, " \\(")[[1]][1] # Get rid of end parenthesis
+    vp <- strsplit(vp, "\\*")[[1]][1] # Get rid of trailing asterisks
+    vp <- gsub("\'", "\\\\\'", vp) # Escape ' character for sql
+    vp <- trimws(vp)
+    
+    # Store candidates and parties in hash
+    candList[[length(candList) + 1]] <- cleanCandidate
+    if (vp != "NULL") {
+      candList[[length(candList) + 1]] <- vp # Make sure if no_vp to not add to list
+    }
+    
+    # Clean up parties so ' char is escaped for sql
+    party <- parties[[1]][j]
+    party <- gsub("\'", "\\\\\'", party)
+    partyList[[length(partyList) + 1]] <- party
+    
+    # Clean up popular votes to get rid of commas in numbers
+    pop <- gsub(",", "", pop)
+    
+    cat(sprintf("%s %s %s %s %s %s\n", row$Year, cleanCandidate, party, electoralVotes[[1]][j], pop, vp))
+    
+    # Write to election file
+    if (row$Year != "") {
+      if (j == 1) {
+        # Only write if election year and if first candidate in list
+        if (elecNum == 1) {
+          write(sprintf("('%s', '%s', '%d')", row$Year, cleanCandidate, elecNum), electionFile, append=TRUE)
+        } else {
+          write(sprintf("('%s', '%s', '%d'), ", row$Year, cleanCandidate, elecNum), electionFile, append=TRUE)
+        }
+        elecNum <- elecNum - 1
+      }
+    }
+    
+    # Write to participated file
+    if (row$Year != "") {
+      # Write a participant unless last candidate
+      # population and vp are weird in that they might be null so handle that now
+      popa <- pop
+      if (popa != "NULL") {
+        popa <- paste("'",popa, "'", sep="")
+      }
+      vpa <- vp
+      if (vpa != "NULL") {
+        vpa <- paste("'",vpa, "'", sep="")
+      }
+      if (i == nrow(g) &&  j == length(candidates[[1]])) {
+        write(sprintf("('%s', '%s', '%s', '%s', %s, %s)", row$Year, cleanCandidate, party, electoralVotes[[1]][j], popa, vpa), participatedFile, append=TRUE)
+      } else {
+        write(sprintf("('%s', '%s', '%s', '%s', %s, %s), ", row$Year, cleanCandidate, party, electoralVotes[[1]][j], popa, vpa), participatedFile, append=TRUE)
+      }
+    }
+    
+  }
+}
+
+emptyList<-list()
+candList <- union(candList, emptyList) # Set operations to remove duplicates
+partyList <- union(partyList, emptyList) 
+
+# Now let's write all parties to a file as a sql command
+fileConn <- "party.txt"
+write("DROP TABLE IF EXISTS `party`;", fileConn)
+write("INSERT INTO `parsdsty` (`name`) VALUES ", fileConn, append = TRUE)
+for (k in 1:length(partyList)){
+  if (k == length(partyList)) {
+    write(sprintf("('%s')", partyList[[k]]), fileConn, append=TRUE)
+  } else {
+    write(sprintf("('%s'), ", partyList[[k]]), fileConn, append=TRUE)
+  }
+}
+
+# Now let's write all candidates to a file as a sql command
+fileConn <- "candidate.txt"
+write("DROP TABLE IF EXISTS `candidate`;", fileConn)
+write("INSERT INTO `candidate` (`name`) VALUES ", fileConn, append = TRUE)
+for (k in 1:length(candList)){
+  if (k == length(candList)) {
+    write(sprintf("('%s')", candList[[k]]), fileConn, append=TRUE)
+  } else {
+    write(sprintf("('%s'), ", candList[[k]]), fileConn, append=TRUE)
+  }
+}
 ```
 
+### Scraping more info about candidates in the candidateScrape.R file
+The candidate.txt file that we generate about is not used in our DB implemenation. Instead, the script **candidateScrape.R** makes the SQL file for candidates called **candidate2.txt**. We however modify this file again by hand and finally use the **candidate_best.txt** file as part of our DB implementation.
 
-### Scrape url from Wiki
-We need to scrap an html table from wiki that has info on presidential elections and popular votes. This table only has popular vote data from 1824. Click [Here](https://en.wikipedia.org/wiki/List_of_United_States_presidential_elections_by_popular_vote_margin#List) To see the wiki yourself.
-```{r main}
-# URL of wiki of list of presidents
-url <- "https://en.wikipedia.org/wiki/List_of_United_States_presidential_elections_by_popular_vote_margin"
-
-# read URL
-president_list <- read_html(url)
-
-# Scrape following the xpath for the table
-president_table <- president_list %>% html_node(xpath = '//*[@id="mw-content-text"]/table[2]') %>% html_table()
-
-# display first 2 rows and first 4 attributes
-head(president_table[1:2,1:4])
-```
-
-As you can see above, the data table is not yet clean and has some work to do, we will first remove the first two rows which are simply headers and an empty line.
-```{r clean1}
-# remove the first 2 rows which are headers
-president_table <- president_table[3:nrow(president_table),]
-
-# display first 2 rows and first 4 attributes
-head(president_table[1:2,1:4])
-```
-
-Next, we will rename the columns so that they make sense.
-```{r rename_columns}
-# rename columns
-colnames(president_table)[1] <- "Election_Number"
-colnames(president_table)[2] <- "Election_Year"
-colnames(president_table)[3] <- "Winner"
-colnames(president_table)[4] <- "W_Party"
-colnames(president_table)[5] <- "Electoral_Proportion"
-colnames(president_table)[6] <- "Electoral_Percentage"
-colnames(president_table)[7] <- "Popular_Percentage"
-colnames(president_table)[8] <- "Popular_Margin"
-colnames(president_table)[9] <- "Winner_Votes"
-colnames(president_table)[10] <- "Winner_Votes_Margin"
-colnames(president_table)[11] <- "Runner-Up"
-colnames(president_table)[12] <- "L_Party"
-colnames(president_table)[13] <- "Turnout_pct"
-
-# store president_table as a tibble for better printing
-president_table <- tbl_df(president_table)
-
-# display president table with new column names
-head(president_table)
-```
-Things are starting to look much better. We still need to change the the datatypes of many of this columns and extract more useful attributes given what we have (for example, number of votes for losing opponent)
-
-```{r pres_str}
-# lets have a look at the datatypes in each columns
-str(president_table)
-```
-
-We need to convert Some of these column types to the right datatype
-```{r convert_cols}
-# convert column types
-president_table <- president_table %>% readr::type_convert(col_types = cols(
-  Election_Number = col_integer(),
-  W_Party = col_factor(levels(president_table$W_Party %>% as.factor())),
-  Winner = col_factor(levels(president_table$Winner %>% as.factor())),
-  `Runner-Up` = col_factor(levels(president_table$`Runner-Up` %>% as.factor())),
-  L_Party = col_factor(levels(president_table$L_Party %>% as.factor()))
-))
-```
-
-For columns with string representations of integers and percentage points, we have to strip unneccesary characters such as the percent '%' sign and division sign '/'.
-Here are some examples
-```{r examples}
-# need to get rid of / sign
-president_table$Electoral_Proportion[1]
-
-# need to get rid of % sign
-president_table$Turnout_pct[1]
-```
-
-In the process of getting rid of the 'Electoral_Proportion' Column, we will create new columns for Electoral votes won by the winning candidate and total electoral votes in the election year. It will be up to the user to query what percentage the electoral vote the winner recieved (**for now**).
-
-```{r new_columns}
-# replace electoral proportion into electoral votes won (W_Electoral_Votes) and Total_Electoral_Votes
-president_table <- 
-  president_table %>% 
-  tidyr::separate(
-    col = "Electoral_Proportion", 
-    into = c("W_Electoral_Votes", "Total_Electoral_Votes"), 
-    sep = "/")
-
-# convert those columns into integers
-president_table <- president_table %>% readr::type_convert(col_types = cols(
-  W_Electoral_Votes = col_integer(),
-  Total_Electoral_Votes = col_integer()
-))
-
-# remove the electoral percentage column
-president_table <- 
-  president_table %>% 
-    select(-Electoral_Percentage)
-
-# take a look
-president_table %>% select(Winner, W_Electoral_Votes, Total_Electoral_Votes) %>% head()
-```
-
-### Convert Voter Turnout Percentage to a Double
-```{r voter_turnout}
-# remove % sign and special characters
-president_table <- 
-  president_table %>% 
-    tidyr::separate(col="Turnout_pct",
-                    into = "Turnout_pct",
-                    sep = "%",
-                    remove = TRUE,
-                    extra = "drop")
-
-# convert voter turnout into a double and divide by 100
-president_table$Turnout_pct <- president_table$Turnout_pct %>% as.double()
-president_table <- president_table %>% mutate(Turnout_pct = Turnout_pct/100)
-```
-
-### Account for Losers Vote Count
-Instead of having a column that displays the margin of the winners victory, we would like to rather have a column that displays how many votes the losing candidate recieved. But first, however, we need to convert the column of Winner_Votes into an integer. This involves cleaning (removing commas and other characters) from each row.
-```{r loser_votes}
-# First remove commas and random characters from Winner_Votes Column
-president_table$Winner_Votes <- gsub("(\\W)","", president_table$Winner_Votes)
-
-# Next, convert to integer
-# president_table$Winner_Votes %>% as.integer()
-```
-
-# ABORT, DOUG ALREADY DID ABOVE :(
-# This Document will be rewritten with Doug's Code to scrap a different source...
-### Below is code to scrape population/census data.
-
-### Scrape Population/Census Table
+# Scrape Population/Census Table
+**The next section will create population.txt and population_best.txt.** We will be using **population_best.txt** for our database.
+We scrape census population data for every 10 years starting from 1610. The following data can be found from this wikipedia article [here](https://en.wikipedia.org/wiki/Demographic_history_of_the_United_States#Historical_population).
 ```{r scrape_census}
 url <- 'https://en.wikipedia.org/wiki/Demographic_history_of_the_United_States#Historical_population'
 xpath <- '//*[@id="mw-content-text"]/table[2]'
@@ -165,10 +197,10 @@ census_table <- census_table[2:nrow(census_table),]
 ```
 
 ### Stip commas from numbers
+We need to strip the commas from the population data before we can store it via sql
 ```{r strip_commas}
 census_table$Population <- gsub(",","", census_table$Population)
 ```
-
 
 Now lets write the table as an SQL entry file
 ```{r write_to_sql}
@@ -183,15 +215,73 @@ for (k in 1:nrow(census_table)){
   }
 }
 ```
+### Manually adding population data for election years.
+For election years, we will manually add the folling data for population. We only had census data for every 10 years before but we would like to have population for years where elections took place as well. The text below is appended to the **population.txt** file and saved into a new file called **population_best.txt**
+```{txt}
+('1789', '3804342'),
+('1792', '4172906'),
+('1796', '4706570'),
+('1804', '6010005'),
+('1808', '6804234'),
+('1812', '7666314'),
+('1816', '8596011'),
+('1824', '10818875'),
+('1828', '12143863'),
+('1832', '13614425'),
+('1836', '15244369'),
+('1844', '19295948'),
+('1848', '21812961'),
+('1852', '24647586'),
+('1856', '27838857'),
+('1864', '34116504'),
+('1868', '37016949'),
+('1872', '40645925'),
+('1876', '45166214'),
+('1884', '54959988'),
+('1888', '60184258'),
+('1892', '65408007'),
+('1896', '70548968'),
+('1904', '82166000'),
+('1908', '88710000'),
+('1912', '95335000'),
+('1916', '101961000'),
+('1924', '114109000'),
+('1928', '120509000'),
+('1932', '124840471'),
+('1936', '128053180'),
+('1944', '138397345'),
+('1948', '146631302'),
+('1952', '157552740'),
+('1956', '168903031'),
+('1964', '191888791'),
+('1968', '200706052'),
+('1972', '209896021'),
+('1976', '218035164'),
+('1984', '235824902'),
+('1988', '244498982'),
+('1992', '254994517'),
+('1996', '265189794'),
+('2004', '293045739'),
+('2008', '304374846'),
+('2012', '314100000');
+```
+
+
+
+
+
+
+
+
 
 
 # Scraping Polling Data
+
 ### Original API sources for csv files.
-We are getting our sources from [pollyvote.com](https://pollyvote.com/en/about/data/). Below is the list of URLs for API calls to get the csv for our data. Note that data for polls is only available from the 1940 election (that is when polling data became widely available and popular).
-```{r}
+We are getting our sources from [pollyvote.com](https://pollyvote.com/en/about/data/). Below is the list of URLs for API calls to get the csv for our data. Note that data for polls is only available from the 1940 election (that is when polling data became widely available and popular). This is expected and the best data we can get.
+```{r pollyVoteURLs}
 # national expectation polls 2016
 nep16 <- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?time=current&type=expectations&format=csv' 
-
 # national intention polls 2016
 nip16 <- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?time=current&type=polls&format=csv'
 
@@ -203,6 +293,7 @@ niph <- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?type=polls&fo
 ```
 
 ### Import/Download the csv from these URLs
+We make a function to download given a URL and make a dataframe as well as a .csv file.
 ```{r importCSV}
 # filename: the name you want to download and save the csv as.
 # df.name: the name of the dataframe for the csv you want
@@ -215,8 +306,8 @@ download_polls <- function(filename, df.name, source.URL) {
 }
 ```
 
-**call the function above on all the polling data we want**
-```{r}
+**Next, we call the function above on all the polling data we want**
+```{r callDownloadPolls, warning=FALSE, error=FALSE, message=FALSE}
 # national expectation polls 2016
 download_polls(filename = '2016_national_expectation_polls.csv', 
                df.name = 'national_expectation_polls.2016',
@@ -239,6 +330,27 @@ download_polls(filename = 'historic_national_intention_polls.csv',
 ```
 
 ### Only select the columns we care about
+The original CSV gives us an astounding **43** columns of data. A lot of these columns have empty (i.e. NULL) data and are not interesting and usefull to us. We will only select the relevant ones below
+
+* electionyear
+* fcdate
+* daystoelection
+* fcrepvs
+* fcdemvs
+* fcerror
+* absolutefcerror
+* lastsurveyday
+* firstsurveyday
+* released
+* sample
+* moe
+* questiontxt
+* surveyorg
+* surveysponsor
+* intmethod
+* sampledesc
+* state
+
 ```{r selectGoodColumns}
 # selects only relevant/good columns from the initial list of 43 columns that we get from the csv
 selectGoodColumns <- function(df.name, list.of.columns) {
@@ -280,7 +392,8 @@ national_intention_polls.historic <- national_intention_polls.historic %>% mutat
 ```
 
 ### Convert some columns before sql insertion
-```{r }
+Some of the original columns have dates stored with '.' seperating the month, day, and year. We need to convert these to dashes. We do this below for each of the dataframes using **readr::type_convert** function.
+```{r convert_cols_to_dates}
 # national expectation polls 2016
 national_expectation_polls.2016 <- 
   national_expectation_polls.2016 %>% readr::type_convert(col_types = cols(
@@ -318,8 +431,8 @@ national_intention_polls.historic <-
 ))
 ```
 
-## Build the SQL file
-We will know loop through the four dataframes we have created convert the rows into mysql insert statements as well as define/create the relation for the table we will need (polls).
+### Build the SQL file
+In the code block below, we create the **polls.txt** file and create the **polls** relation. We define the column names and 
 ```{r sqlPolls}
 pollsFile <- "polls.txt"
 write("DROP TABLE IF EXISTS `polls`;", pollsFile)
@@ -342,8 +455,9 @@ write("CREATE TABLE presidential_elections.polls (election_year VARCHAR(64) NOT 
                                                   sample_desc TEXT,
                                                   state VARCHAR(40),
                                                   poll_type VARCHAR(15));", 
-                                                  pollsFile,
-                                                  append = TRUE)
+pollsFile,
+append = TRUE)
+
 write("INSERT INTO polls (                        election_year, 
                                                   fc_date, 
                                                   days_to_election, 
@@ -362,11 +476,16 @@ write("INSERT INTO polls (                        election_year,
                                                   intmethod,
                                                   sample_desc,
                                                   state,
-                                                  poll_type) VALUES ", pollsFile, append=TRUE)
+                                                  poll_type) VALUES ",
+pollsFile, 
+append=TRUE)
 ```
-### Write the values
-```{r}
-# function to write the tuples of each dataframe (df) to the polls.txt file
+
+### Write the poll tuples
+We will now loop through the four dataframes we have created convert the rows into mysql insert statements as well as define/create the relation for the table we will need (polls). 
+**Just a note: at the end of the text file you should remove the last comma and replace it with a semicolon.**
+```{r writePolls}
+# writeFD: function to write the tuples of each dataframe (df) to the polls.txt file
 writeFD <- function(df) {
     for(i in 1:nrow(df)) {
       electionyear <-   df$electionyear
@@ -423,5 +542,3 @@ writeFD(national_intention_polls.2016)
 writeFD(national_expectation_polls.historic)
 writeFD(national_intention_polls.historic)
 ```
-## Wola! We are done!
-Just a note: at the end of the text file you should remove the last comma and replace it with a semicolon.
