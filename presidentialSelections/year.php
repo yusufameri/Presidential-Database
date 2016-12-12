@@ -139,7 +139,7 @@ function poll_query($year) {
 			
 			// Dispaly Survey Sponser if exists
 			if ($row['survey_sponser'] != 'NULL') {
-				echo "<h4>Survey Sponser: " . $row['survey_sponser'] . "</h2>";
+				echo "<h4>Survey Sponsor: " . $row['survey_sponser'] . "</h2>";
 			}
 			
 			// Display poll type
