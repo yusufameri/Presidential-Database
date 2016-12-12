@@ -8,6 +8,9 @@ if (isset($_POST['action'])) {
 		case 'year_query':
 			year_query($_POST['data']);
 			break;
+		case 'poll_query':
+			poll_query($_POST['data']);
+			break;
     }
 }
 
@@ -100,15 +103,90 @@ function year_query($year) {
 		}
 	} else {
 			echo "<tr>";
-			echo "<td>" . "0 Results" . "</td>";
-			echo "<td>" . "0 Results" . "</td>";
-			echo "<td>" . "0 Results" . "</td>";
-			echo "<td>" . "0 Results" . "</td>";
-			echo "<td>" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
 			echo "</tr>";
 	}
 	echo "</table>";
 	
+}
+
+function poll_query($year) {
+	// The echoed statements get returned to the html
+	$user = 'root';
+	$pass = 'root';
+	$db = 'presidential_elections';
+
+	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
+
+	$sql = "SELECT p.election_year, DATE_FORMAT(p.fc_date, '%M %D, %Y') as fc_date, p.fc_repvs, p.fc_demvs, p.fc_error, p.fc_absolute_error, p.last_survey_day, p.first_survey_day, p.release_day, p.sample, p.question, 
+		p.survey_org, p.survey_sponser, p.intmethod, p.sample_desc, p.poll_type FROM polls p WHERE p.election_year=\"" . $db->real_escape_string($year) . "\" ORDER BY p.fc_date ASC";
+	$result = $db->query($sql);
+
+	if ($result->num_rows > 0) {
+		// output data of each row
+		while($row = $result->fetch_assoc()) {
+			
+			// Display survey org or unavailable if data not available
+			if ($row['survey_sponser'] != 'NULL') {
+				echo "<h2>Survey Organization: " . $row['survey_org'] . "</h2>";
+			} else {
+				echo "<h2>Survey Organization: Unavailable</h2>";
+			}
+			
+			// Dispaly Survey Sponser if exists
+			if ($row['survey_sponser'] != 'NULL') {
+				echo "<h4>Survey Sponser: " . $row['survey_sponser'] . "</h2>";
+			}
+			
+			// Display poll type
+			if ($row['poll_type'] != 'NULL') {
+				echo "<h4>Poll Type: " . $row['poll_type'] . "</h2>";
+			}
+			
+			// Display interrogation method
+			if ($row['intmethod'] != 'NULL') {
+				echo "<h4>Interrogation Method: " . $row['intmethod'] . "</h2>";
+			}
+			
+			// Display sample description
+			if ($row['sample_desc'] != 'NULL') {
+				echo "<h4>Sample Description: " . $row['sample_desc'] . "</h2>";
+			}
+			
+			// Display question
+			if ($row['question'] != 'NULL') {
+				echo "<h4>Question: " . $row['question'] . "</h2>";
+			}
+			
+			// Make the winner table
+			echo "<table border='1' align='center'>
+			<tr>
+			<th style=\"text-align:center\">Year</th>
+			<th style=\"text-align:center\">Forecast Date</th>
+			<th style=\"text-align:center\">Sample Size</th>
+			<th style=\"text-align:center\">Republican</th>
+			<th style=\"text-align:center\">Democrat</th>
+			<th style=\"text-align:center\">Forecast Error</th>
+			</tr>";
+			
+			echo "<tr>";
+			echo "<td style=\"text-align:center\">" . $row['election_year'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['fc_date'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['sample'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['fc_repvs'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['fc_demvs'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['fc_error'] . "</td>";
+			echo "</tr>";
+			echo "</table>";
+			echo "<hr>";
+		}
+	} else {
+		echo "<h3>No polling available for this year.</h3>";
+	}
 }
 
 ?>

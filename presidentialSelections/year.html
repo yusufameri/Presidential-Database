@@ -76,9 +76,15 @@
 				<br></br>
 				<input type="button" name="button" onclick="query_year()" value="Query Year" />
 				<br></br>
+				<input type="button" name="button" onclick="query_polls()" value="Query Polls Before Election" />
+				<br></br>
 				<hr>
 				<div name="responseArea" id="response_area">
 					<h3>Query Results will be displayed here</h3>
+				</div>
+				<hr>
+				<div name="pollResponseArea" id="poll_response_area">
+					<h3>Poll Results will be displayed here</h3>
 				</div>
 			</div>
 
@@ -128,6 +134,17 @@
 		$.post(ajaxurl, data, function (response) {
 			// Response div goes here.
 			document.getElementById("response_area").innerHTML=response;
+		});
+	}
+	
+	function query_polls() {
+		var clickBtnValue = 'poll_query';
+		var data = document.getElementById("select_box_id").value;
+		var ajaxurl = 'year.php',
+		data =  {'action': clickBtnValue, 'data': data};
+		$.post(ajaxurl, data, function (response) {
+			// Response div goes here.
+			document.getElementById("poll_response_area").innerHTML=response;
 		});
 	}
 	</script>
