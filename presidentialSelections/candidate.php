@@ -11,6 +11,9 @@ if (isset($_POST['action'])) {
 		case 'candidate_query':
 			candidate_query($_POST['data']);
 			break;
+		case 'get_candidate_pic':
+			get_candidate_pic($_POST['data']);
+			break;
     }
 }
 
@@ -78,20 +81,85 @@ function candidate_query($candidate) {
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
 
+	// First display birth and death dates
+	$sql = "SELECT candidate.name, DATE_FORMAT( candidate.birth_date, '%M %D, %Y') as birth_date, DATE_FORMAT( candidate.death_date, '%M %D, %Y') as death_date FROM candidate WHERE candidate.name=\"" . $db->real_escape_string($candidate) . "\"";
+	$result = $db->query($sql);
+
+	if ($result->num_rows > 0) {
+		// output data of each row (should just be 1 row)
+		while($row = $result->fetch_assoc()) {
+			echo "<h1 align='center'>" . $row['name'] . "</h1>";
+			$bday = (empty($row['birth_date'])) ? "?" : $row['birth_date'];
+			$dday = (empty($row['death_date'])) ? "?" : $row['death_date'];
+			echo "<h2 align='center'>" . $bday . " - " . $dday . "</h2>";
+		}
+	} else {
+			echo "<h1>No Result Found</h1>";
+	}
+	
+	// Now display particpation as a candidate
+	$sql = "SELECT * FROM participated p, election e WHERE (p.candidate = \"" . $db->real_escape_string($candidate) . "\" OR p.vice_president = \"" . $db->real_escape_string($candidate) . "\") AND p.year = e.year";
+	$result = $db->query($sql);
+	
+	echo "<table border='1' align='center'>
+	<tr>
+	<th>Election Number</th>
+	<th>Year</th>
+	<th>Candidate</th>
+	<th>Party</th>
+	<th>Electoral Vote</th>
+	<th>Popular Vote</th>
+	<th>Vice President</th>
+	<th>Election Winner</th>
+	</tr>";
+	echo "<tr>";
+	
+	if ($result->num_rows > 0) {
+		// output data of each row
+		while($row = $result->fetch_assoc()) {
+			echo "<tr>";
+			echo "<td style=\"text-align:center\">" . $row['num'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['year'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['candidate'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['party'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['electoral_vote'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['popular_vote'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['vice_president'] . "</td>";
+			echo "<td style=\"text-align:center\">" . $row['winner'] . "</td>";
+			echo "</tr>";
+		}
+	} else {
+			echo "<tr>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "<td style=\"text-align:center\">" . "0 Results" . "</td>";
+			echo "</tr>";
+	}
+	echo "</table>";
+	
+}
+
+function get_candidate_pic($candidate) {
+	// The echoed statements get returned to the html
+	$user = 'root';
+	$pass = 'root';
+	$db = 'presidential_elections';
+
+	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
+
 	$sql = "SELECT * FROM candidate WHERE candidate.name=\"" . $db->real_escape_string($candidate) . "\"";
 	$result = $db->query($sql);
 
 	if ($result->num_rows > 0) {
 		// output data of each row (should just be 1 row)
 		while($row = $result->fetch_assoc()) {
-			echo "<h1>" . $row['name'] . "</h1>";
-			$bday = (empty($row['birth_date'])) ? "?" : $row['birth_date'];
-			$dday = (empty($row['death_date'])) ? "?" : $row['death_date'];
-			echo "<h2>" . $bday . " - " . $dday . "</h2>";
-			echo "<img src=\"" . $row['image_url'] . "\">";
+			echo $row['image_url'];
 		}
-	} else {
-			echo "<h1>No Result Found</h1>";
 	}
 }
 

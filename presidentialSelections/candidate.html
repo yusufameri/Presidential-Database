@@ -77,6 +77,9 @@
 				<input type="button" name="button" onclick="query_candidate()" value="Query Candidate" />
 				<br></br>
 				<hr>
+				<div id="picture_area">
+					<p style="text-align:center;"><img id="pres_image" src=""></p>
+				</div>
 				<div name="responseArea" id="response_area">
 					<h3>Query Results will be displayed here</h3>
 				</div>
@@ -141,6 +144,41 @@
 			// Response div goes here.
 			document.getElementById("response_area").innerHTML=response;
 		});
+		clickBtnValue = 'get_candidate_pic';
+		var data = document.getElementById("select_box_id").value;
+		data =  {'action': clickBtnValue, 'data': data};
+		$.post(ajaxurl, data, function (response) {
+			// Response div goes here.
+			document.getElementById("pres_image").src=response;
+		});
+		//sleep(100);
+		resize_image();
+	}
+	
+	function resize_image() {
+		var pres_image = document.getElementById("pres_image");
+		var height = 0;
+		var width = 0;
+	
+		$(document).ready(function() {
+			$(pres_image).load(function() {
+				
+				height = $(this).height();
+				width = $(this).width();
+				var scale = 400 / width;
+				$(this).height(height * scale);
+				$(this).width(width * scale);
+			});
+		});
+	}
+	
+	function sleep(milliseconds) {
+		var start = new Date().getTime();
+		for (var i = 0; i < 1e7; i++) {
+			if ((new Date().getTime() - start) > milliseconds){
+				break;
+			}
+		}
 	}
 	</script>
 
