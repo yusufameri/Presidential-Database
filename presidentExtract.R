@@ -1,3 +1,10 @@
+# Files CREATED in this Script: 
+# * election.txt
+# * participated.txt
+# * party.txt
+# * candidate.txt
+# * population.txt
+
 # This script extracts the Year, Candidates, Electoral Votes, Popular Votes, and VPs for each election.
 # It also contains information on which # president including non-election year presidents (aka president before died)
 
@@ -18,9 +25,15 @@ partyList<-list()
 electionFile <- "election.txt" # The election and participated files
 participatedFile <- "participated.txt"
 
+# drop if tables exist
+write("DROP TABLE IF EXISTS `election`;", electionFile)
+write("DROP TABLE IF EXISTS `participated`;", participatedFile, append = TRUE)
+
 # Write initial sql text to file
-write("INSERT INTO `election` (`year`, `winner`, `num`) VALUES ", electionFile)
-write("INSERT INTO `participated` (`year`, `candidate`, `party`, `electoral_vote`, `popular_vote`, `vice_president`) VALUES ", participatedFile)
+write("INSERT INTO `election` (`year`, `winner`, `num`) VALUES ", electionFile, append = TRUE)
+write("INSERT INTO `participated` (`year`, `candidate`, `party`, `electoral_vote`, `popular_vote`, `vice_president`) VALUES ", 
+      participatedFile, 
+      append = TRUE)
 
 elecNum <- 57 # Hard coded value for number of elections
 
@@ -114,7 +127,8 @@ partyList <- union(partyList, emptyList)
 
 # Now let's write all parties to a file as a sql command
 fileConn <- "party.txt"
-write("INSERT INTO `party` (`name`) VALUES ", fileConn)
+write("DROP TABLE IF EXISTS `party`;", fileConn)
+write("INSERT INTO `parsdsty` (`name`) VALUES ", fileConn, append = TRUE)
 for (k in 1:length(partyList)){
   if (k == length(partyList)) {
     write(sprintf("('%s')", partyList[[k]]), fileConn, append=TRUE)
@@ -125,7 +139,8 @@ for (k in 1:length(partyList)){
 
 # Now let's write all candidates to a file as a sql command
 fileConn <- "candidate.txt"
-write("INSERT INTO `candidate` (`name`) VALUES ", fileConn)
+write("DROP TABLE IF EXISTS `candidate`;", fileConn)
+write("INSERT INTO `candidate` (`name`) VALUES ", fileConn, append = TRUE)
 for (k in 1:length(candList)){
   if (k == length(candList)) {
     write(sprintf("('%s')", candList[[k]]), fileConn, append=TRUE)
@@ -133,34 +148,3 @@ for (k in 1:length(candList)){
     write(sprintf("('%s'), ", candList[[k]]), fileConn, append=TRUE)
   }
 }
-
-
-
-# Scraping US Census data 1610 to 2010
-url <- 'https://en.wikipedia.org/wiki/Demographic_history_of_the_United_States#Historical_population'
-xpath <- '//*[@id="mw-content-text"]/table[2]'
-
-census <- read_html(url)
-
-census_table <- census %>% html_node(xpath = xpath) %>% html_table()
-
-# remove last row
-census_table <- census_table[2:nrow(census_table),]
-
-# pdf source: http://www2.census.gov/prod2/statcomp/documents/CT1970p2-13.pdf
-
-# strip commas from population
-census_table$Population <- gsub(",","", census_table$Population)
-
-# write the dataframe to txt for sql insertion
-fileConn <- "population.txt"
-write("INSERT INTO `population` (`year`, `population`) VALUES ", fileConn)
-for (k in 1:dim(census_table)[1]){
-  if (k == length(partyList)) {
-    write(sprintf("('%s', '%s'), ", census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
-  } else {
-    write(sprintf("('%s', '%s')", census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
-  }
-}
-
-
