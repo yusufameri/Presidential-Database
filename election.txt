@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS `election`;
+CREATE TABLE presidential_elections.election (year date NOT NULL, winner VARCHAR(64), num INTEGER);
 INSERT INTO `election` (`year`, `winner`, `num`) VALUES 
 ('2012', 'Barack Obama', '57'), 
 ('2008', 'Barack Obama', '56'), 

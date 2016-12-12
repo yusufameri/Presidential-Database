@@ -123,146 +123,772 @@ $(document).ready(function () {
 </div>
 
 
-<div id="load-neccessary-libraries" class="section level3">
-<h3>Load Neccessary Libraries</h3>
-<pre class="r"><code>library(rvest)    # for web scraping
-library(dplyr)    # for column selection
-library(tidyr)    # for column tidying
-library(magrittr) # for piping
-library(tibble)   # for pretty table printing
-library(readr)    # for converting column types</code></pre>
+<div id="document-information" class="section level1">
+<h1>Document Information</h1>
+<p>The following document describes how we obtained and went through the <strong>ETL</strong> process to create the following files:</p>
+<ul>
+<li>election.txt (use this one)</li>
+<li>participated.txt (use this one)</li>
+<li>party.txt (use this one)</li>
+<li>candidate.txt (use this one)</li>
+<li>population.txt</li>
+<li>population.txt (use this one)</li>
+<li>polls.txt (use this one)</li>
+</ul>
+<div id="files-not-made-by-this-document" class="section level3">
+<h3>Files not made by this document</h3>
+<p>Some files are not made in this document and are instead made by hand or in other R scrip files such as …</p>
+<ul>
+<li>population_best.txt</li>
+<li>candidate_best.txt</li>
+</ul>
 </div>
-<div id="scrape-url-from-wiki" class="section level3">
-<h3>Scrape url from Wiki</h3>
-<p>We need to scrap an html table from wiki that has info on presidential elections and popular votes. This table only has popular vote data from 1824. Click <a href="https://en.wikipedia.org/wiki/List_of_United_States_presidential_elections_by_popular_vote_margin#List">Here</a> To see the wiki yourself.</p>
-<pre class="r"><code># URL of wiki of list of presidents
-url &lt;- &quot;https://en.wikipedia.org/wiki/List_of_United_States_presidential_elections_by_popular_vote_margin&quot;
+</div>
+<div id="dougs-scraping-for-election-participated-party-and-candidate" class="section level1">
+<h1>Doug’s Scraping for Election, Participated, Party, and Candidate</h1>
+<p>The following chunk below makes the <strong>election.txt</strong> file with the <strong>election</strong> relation, as well as the <strong>participated.txt</strong> file with the <strong>participated</strong> relation.</p>
+<ul>
+<li>election.txt (use this one)</li>
+<li>participated.txt (use this one)</li>
+<li>party.txt (use this one)</li>
+<li>candidate.txt (NOT USED)</li>
+</ul>
+<pre class="r"><code>library(rvest)</code></pre>
+<pre><code>## Loading required package: xml2</code></pre>
+<pre class="r"><code>library(readr)</code></pre>
+<pre><code>## 
+## Attaching package: 'readr'</code></pre>
+<pre><code>## The following object is masked from 'package:rvest':
+## 
+##     guess_encoding</code></pre>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: 'dplyr'</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(tidyr)
+#url &lt;- &quot;http://2012election.procon.org/view.resource.php?resourceID=004332&quot;
+#webpage &lt;- read_html(url)
+webpage &lt;- read_html(&quot;PresElectHist.html&quot;) # Make sure this file is in your working directory!
+p_table &lt;- html_nodes(webpage, 'table')
+p &lt;- p_table[[18]]
+g &lt;- html_table(p, fill=TRUE, trim=TRUE)
+names(g) &lt;- c(&quot;Year&quot;, &quot;Candidates&quot;, &quot;Parties&quot;, &quot;Electoral Votes&quot;, &quot;Popular Votes&quot;, &quot;VPs&quot;)
+g &lt;- g[(1:6)] # Get rid of 4 extraneous columns
+g &lt;- g[grepl(&quot;\\([[:digit:]]&quot;, g$Candidates),] # Get rows of candidates with open parenthesis followed by number
 
-# read URL
-president_list &lt;- read_html(url)
+candList&lt;-list() # These lists are used to make a set of the candidates and parties
+partyList&lt;-list()
 
-# Scrape following the xpath for the table
-president_table &lt;- president_list %&gt;% html_node(xpath = '//*[@id=&quot;mw-content-text&quot;]/table[2]') %&gt;% html_table()
+electionFile &lt;- &quot;election.txt&quot; # The election and participated files
+participatedFile &lt;- &quot;participated.txt&quot;
 
-# display first 2 rows and first 4 attributes
-head(president_table[1:2,1:4])</code></pre>
-<pre><code>##                                                                                                                                                    Election
-## 1                                                                                                                                                          
-## 2 Democratic-Republican   Democratic   Republican   Whig   Progressive   Liberal Republican   National Republican        Indicates winner lost popular vote
-##                                                                                                                                                  Election.1
-## 1                                                                                                                                                          
-## 2 Democratic-Republican   Democratic   Republican   Whig   Progressive   Liberal Republican   National Republican        Indicates winner lost popular vote
-##                                                                                                                                              Winner &amp; party
-## 1                                                                                                                                                          
-## 2 Democratic-Republican   Democratic   Republican   Whig   Progressive   Liberal Republican   National Republican        Indicates winner lost popular vote
-##                                                                                                                                            Winner &amp; party.1
-## 1                                                                                                                                                          
-## 2 Democratic-Republican   Democratic   Republican   Whig   Progressive   Liberal Republican   National Republican        Indicates winner lost popular vote</code></pre>
-<p>As you can see above, the data table is not yet clean and has some work to do, we will first remove the first two rows which are simply headers and an empty line.</p>
-<pre class="r"><code># remove the first 2 rows which are headers
-president_table &lt;- president_table[3:nrow(president_table),]
+# drop if tables exist
+write(&quot;DROP TABLE IF EXISTS `election`;&quot;, electionFile)
+write(&quot;DROP TABLE IF EXISTS `participated`;&quot;, participatedFile, append = TRUE)
 
-# display first 2 rows and first 4 attributes
-head(president_table[1:2,1:4])</code></pre>
-<pre><code>##   Election Election.1          Winner &amp; party Winner &amp; party.1
-## 3       10       1824 Adams,John Quincy Adams            D.-R.
-## 4       23       1876  Hayes,Rutherford Hayes             Rep.</code></pre>
-<p>Next, we will rename the columns so that they make sense.</p>
-<pre class="r"><code># rename columns
-colnames(president_table)[1] &lt;- &quot;Election_Number&quot;
-colnames(president_table)[2] &lt;- &quot;Election_Year&quot;
-colnames(president_table)[3] &lt;- &quot;Winner&quot;
-colnames(president_table)[4] &lt;- &quot;W_Party&quot;
-colnames(president_table)[5] &lt;- &quot;Electoral_Proportion&quot;
-colnames(president_table)[6] &lt;- &quot;Electoral_Percentage&quot;
-colnames(president_table)[7] &lt;- &quot;Popular_Percentage&quot;
-colnames(president_table)[8] &lt;- &quot;Popular_Margin&quot;
-colnames(president_table)[9] &lt;- &quot;Winner_Votes&quot;
-colnames(president_table)[10] &lt;- &quot;Winner_Votes_Margin&quot;
-colnames(president_table)[11] &lt;- &quot;Runner-Up&quot;
-colnames(president_table)[12] &lt;- &quot;L_Party&quot;
-colnames(president_table)[13] &lt;- &quot;Turnout_pct&quot;
+# Write initial sql text to file
+write(&quot;INSERT INTO `election` (`year`, `winner`, `num`) VALUES &quot;, electionFile, append = TRUE)
+write(&quot;INSERT INTO `participated` (`year`, `candidate`, `party`, `electoral_vote`, `popular_vote`, `vice_president`) VALUES &quot;, 
+      participatedFile, 
+      append = TRUE)
 
-# store president_table as a tibble for better printing
-president_table &lt;- tbl_df(president_table)
+elecNum &lt;- 57 # Hard coded value for number of elections
 
-# display president table with new column names
-head(president_table)</code></pre>
-<pre><code>## # A tibble: 6 × 13
-##   Election_Number Election_Year                     Winner W_Party
-##             &lt;chr&gt;         &lt;chr&gt;                      &lt;chr&gt;   &lt;chr&gt;
-## 1              10          1824    Adams,John Quincy Adams   D.-R.
-## 2              23          1876     Hayes,Rutherford Hayes    Rep.
-## 3              58          2016         Trump,Donald Trump    Rep.
-## 4              26          1888 Harrison,Benjamin Harrison    Rep.
-## 5              54          2000        Bush,George W. Bush    Rep.
-## 6              24          1880    Garfield,James Garfield    Rep.
-## # ... with 9 more variables: Electoral_Proportion &lt;chr&gt;,
-## #   Electoral_Percentage &lt;chr&gt;, Popular_Percentage &lt;chr&gt;,
-## #   Popular_Margin &lt;chr&gt;, Winner_Votes &lt;chr&gt;, Winner_Votes_Margin &lt;chr&gt;,
-## #   `Runner-Up` &lt;chr&gt;, L_Party &lt;chr&gt;, Turnout_pct &lt;chr&gt;</code></pre>
-<p>Things are starting to look much better. We still need to change the the datatypes of many of this columns and extract more useful attributes given what we have (for example, number of votes for losing opponent)</p>
-<pre class="r"><code># lets have a look at the datatypes in each columns
-str(president_table)</code></pre>
-<pre><code>## Classes 'tbl_df', 'tbl' and 'data.frame':    49 obs. of  13 variables:
-##  $ Election_Number     : chr  &quot;10&quot; &quot;23&quot; &quot;58&quot; &quot;26&quot; ...
-##  $ Election_Year       : chr  &quot;1824&quot; &quot;1876&quot; &quot;2016&quot; &quot;1888&quot; ...
-##  $ Winner              : chr  &quot;Adams,John Quincy Adams&quot; &quot;Hayes,Rutherford Hayes&quot; &quot;Trump,Donald Trump&quot; &quot;Harrison,Benjamin Harrison&quot; ...
-##  $ W_Party             : chr  &quot;D.-R.&quot; &quot;Rep.&quot; &quot;Rep.&quot; &quot;Rep.&quot; ...
-##  $ Electoral_Proportion: chr  &quot;84/261&quot; &quot;185/369&quot; &quot;306/538&quot; &quot;233/401&quot; ...
-##  $ Electoral_Percentage: chr  &quot;32.18%&quot; &quot;50.14%&quot; &quot;56.87%&quot; &quot;58.10%&quot; ...
-##  $ Popular_Percentage  : chr  &quot;30.92%&quot; &quot;47.92%&quot; &quot;46.16%[a]&quot; &quot;47.80%&quot; ...
-##  $ Popular_Margin      : chr  &quot;−10.44%&quot; &quot;−3.00%&quot; &quot;−1.86%[a]&quot; &quot;−0.83%&quot; ...
-##  $ Winner_Votes        : chr  &quot;113,142&quot; &quot;4,034,142&quot; &quot;62,673,215[a]&quot; &quot;5,443,633&quot; ...
-##  $ Winner_Votes_Margin : chr  &quot;−38,221&quot; &quot;−252,666&quot; &quot;−2,526,746[a]&quot; &quot;−94,530&quot; ...
-##  $ Runner-Up           : chr  &quot;Jackson,Andrew Jackson&quot; &quot;Tilden,Samuel Tilden&quot; &quot;Clinton,Hillary Clinton&quot; &quot;Cleveland,Grover Cleveland&quot; ...
-##  $ L_Party             : chr  &quot;D.-R.&quot; &quot;Dem.&quot; &quot;Dem.&quot; &quot;Dem.&quot; ...
-##  $ Turnout_pct         : chr  &quot;26.9%&quot; &quot;82.6%&quot; &quot;58.6%[a]&quot; &quot;80.5%&quot; ...</code></pre>
-<p>We need to convert Some of these column types to the right datatype</p>
-<pre class="r"><code># convert column types
-president_table &lt;- president_table %&gt;% readr::type_convert(col_types = cols(
-  Election_Number = col_integer(),
-  W_Party = col_factor(levels(president_table$W_Party %&gt;% as.factor())),
-  Winner = col_factor(levels(president_table$Winner %&gt;% as.factor())),
-  `Runner-Up` = col_factor(levels(president_table$`Runner-Up` %&gt;% as.factor())),
-  L_Party = col_factor(levels(president_table$L_Party %&gt;% as.factor()))
-))</code></pre>
-<p>For columns with string representations of integers and percentage points, we have to strip unneccesary characters such as the percent ‘%’ sign and division sign ‘/’. Here are some examples</p>
-<pre class="r"><code># need to get rid of / sign
-president_table$Electoral_Proportion[1]</code></pre>
-<pre><code>## [1] &quot;84/261&quot;</code></pre>
-<pre class="r"><code># need to get rid of % sign
-president_table$Electoral_Percentage[1]</code></pre>
-<pre><code>## [1] &quot;32.18%&quot;</code></pre>
-<p>In the process of getting rid of the ‘Electoral_Proportion’ Column, we will create new columns for Electoral votes won by the winning candidate and total electoral votes in the election year. It will be up to the user to query what percentage the electoral vote the winner recieved (<strong>for now</strong>).</p>
-<pre class="r"><code># replace electoral proportion into electoral votes won (W_Electoral_Votes) and Total_Electoral_Votes
-president_table &lt;- 
-  president_table %&gt;% 
-  tidyr::separate(
-    col = &quot;Electoral_Proportion&quot;, 
-    into = c(&quot;W_Electoral_Votes&quot;, &quot;Total_Electoral_Votes&quot;), 
-    sep = &quot;/&quot;)
+for(i in 1:nrow(g)) {
+  row &lt;- g[i,]
+  candidates &lt;- strsplit(row$Candidates, &quot;\n&quot;)
+  parties &lt;- strsplit(row$Parties, &quot;\n&quot;)
+  electoralVotes &lt;- strsplit(row$`Electoral Votes`, &quot;\n&quot;)
+  popularVotes &lt;- strsplit(row$`Popular Votes`, &quot;\n&quot;)
+  vicePresidents &lt;- strsplit(row$VPs, &quot;\n&quot;)
+  for (j in 1:length(candidates[[1]])) {
+    pop &lt;- &quot;&quot;
+    vp &lt;- &quot;&quot;
+    # Popular votes and vp might not exist
+    if (j &lt;= length(popularVotes[[1]])) {
+      pop &lt;- (popularVotes[[1]][j])
+    } else {
+      pop &lt;- (&quot;NULL&quot;)
+    }
+    
+    if (j &lt;= length(vicePresidents[[1]])) {
+      vp &lt;- (vicePresidents[[1]][j])
+    } else {
+      vp&lt;- (&quot;NULL&quot;)
+    }
+    
+    # Now clean up names to get rid of parenthesis
+    cleanCandidate &lt;- strsplit(candidates[[1]][j], &quot; \\(&quot;)[[1]][1] # Get rid of end parenthesis
+    cleanCandidate &lt;- strsplit(cleanCandidate, &quot;\\*&quot;)[[1]][1] # Get rid of trailing asterisks
+    cleanCandidate &lt;- trimws(cleanCandidate) # Get rid of leading and trailing whitespace
+    cleanCandidate &lt;- gsub(&quot;\'&quot;, &quot;\\\\\'&quot;, cleanCandidate) # Escape ' character for sql
+    vp &lt;- strsplit(vp, &quot; \\(&quot;)[[1]][1] # Get rid of end parenthesis
+    vp &lt;- strsplit(vp, &quot;\\*&quot;)[[1]][1] # Get rid of trailing asterisks
+    vp &lt;- gsub(&quot;\'&quot;, &quot;\\\\\'&quot;, vp) # Escape ' character for sql
+    vp &lt;- trimws(vp)
+    
+    # Store candidates and parties in hash
+    candList[[length(candList) + 1]] &lt;- cleanCandidate
+    if (vp != &quot;NULL&quot;) {
+      candList[[length(candList) + 1]] &lt;- vp # Make sure if no_vp to not add to list
+    }
+    
+    # Clean up parties so ' char is escaped for sql
+    party &lt;- parties[[1]][j]
+    party &lt;- gsub(&quot;\'&quot;, &quot;\\\\\'&quot;, party)
+    partyList[[length(partyList) + 1]] &lt;- party
+    
+    # Clean up popular votes to get rid of commas in numbers
+    pop &lt;- gsub(&quot;,&quot;, &quot;&quot;, pop)
+    
+    cat(sprintf(&quot;%s %s %s %s %s %s\n&quot;, row$Year, cleanCandidate, party, electoralVotes[[1]][j], pop, vp))
+    
+    # Write to election file
+    if (row$Year != &quot;&quot;) {
+      if (j == 1) {
+        # Only write if election year and if first candidate in list
+        if (elecNum == 1) {
+          write(sprintf(&quot;('%s', '%s', '%d')&quot;, row$Year, cleanCandidate, elecNum), electionFile, append=TRUE)
+        } else {
+          write(sprintf(&quot;('%s', '%s', '%d'), &quot;, row$Year, cleanCandidate, elecNum), electionFile, append=TRUE)
+        }
+        elecNum &lt;- elecNum - 1
+      }
+    }
+    
+    # Write to participated file
+    if (row$Year != &quot;&quot;) {
+      # Write a participant unless last candidate
+      # population and vp are weird in that they might be null so handle that now
+      popa &lt;- pop
+      if (popa != &quot;NULL&quot;) {
+        popa &lt;- paste(&quot;'&quot;,popa, &quot;'&quot;, sep=&quot;&quot;)
+      }
+      vpa &lt;- vp
+      if (vpa != &quot;NULL&quot;) {
+        vpa &lt;- paste(&quot;'&quot;,vpa, &quot;'&quot;, sep=&quot;&quot;)
+      }
+      if (i == nrow(g) &amp;&amp;  j == length(candidates[[1]])) {
+        write(sprintf(&quot;('%s', '%s', '%s', '%s', %s, %s)&quot;, row$Year, cleanCandidate, party, electoralVotes[[1]][j], popa, vpa), participatedFile, append=TRUE)
+      } else {
+        write(sprintf(&quot;('%s', '%s', '%s', '%s', %s, %s), &quot;, row$Year, cleanCandidate, party, electoralVotes[[1]][j], popa, vpa), participatedFile, append=TRUE)
+      }
+    }
+    
+  }
+}</code></pre>
+<pre><code>## 2012 Barack Obama Democratic 332 65899660 Joe Biden
+## 2012 Mitt Romney Republican 206 60932152 Paul Ryan
+## 2012 Virgil Goode Constitution 0 122001 Jim Clymer
+## 2012 Gary Johnson Libertarian 0 1275804 James P. Gray
+## 2012 Jill Stein Green 0 469501 Cheri Honkala
+## 2008 Barack Obama Democratic 365 69456897 Joe Biden
+## 2008 John McCain Republican 173 59934814 Sarah Palin
+## 2008 Ralph Nader Independent 0 738475 Matt Gonzalez
+## 2008 Bob Barr Libertarian 0 523686 Wayne Root
+## 2008 Chuck Baldwin Constitution 0 199314 Darrell Castle
+## 2008 Cynthia McKinney Green 0 161603 Rosa Clemente
+## 2004 George W. Bush Republican 286 62040610 Dick Cheney
+## 2004 John Kerry Democratic 251 59028439 John Edwards
+## 2004 Ralph Nader Independent 0 463655 Peter Camejo
+## 2004 Michael Badnarik Libertarian 0 397265 Richard Campagna
+## 2004 Michael Peroutka Constitution 0 144499 Charles Baldwin
+## 2004 David Cobb Green 0 119859 Pat LaMarche
+## 2000 George W. Bush Republican 271 50456002 Dick Cheney
+## 2000 Al Gore Democratic 266 50999897 Joe Lieberman
+## 2000 Ralph Nader Green 0 2882955 Winona LaDuke
+## 2000 Pat Buchanan Reform 0 448895 Ezola B. Foster
+## 2000 Harry Browne Libertarian 0 384431 Art Olivier
+## 1996 Bill Clinton Democratic 379 45590703 Al Gore
+## 1996 Bob Dole Republican 159 37816307 Jack Kemp
+## 1996 Ross Perot Reform 0 7866284 Pat Choate
+## 1996 Ralph Nader Green 0 685128 Winona LaDuke
+## 1996 Harry Browne Libertarian 0 485798 Jo Jorgensen
+## 1996 Howard Phillips Taxpayers 0 184820 Herbert Titus
+## 1992 Bill Clinton Democratic 370 44909326 Al Gore
+## 1992 George H.W. Bush Republican 168 39103882 Dan Quayle
+## 1992 Ross Perot Independent 0 19741657 James Stockdale
+## 1992 Andre Marrou Libertarian 0 291627 Nancy Lord
+## 1992 James &quot;Bo&quot; Gritz Populist 0 107014 Cy Minett
+## 1988 George H.W. Bush Republican 426 48886597 Dan Quayle
+## 1988 Michael Dukakis Democratic 111 41809476 Lloyd M. Bentsen
+## 1988 Lloyd Bentsen Democratic 1 NULL Michael S. Dukakis
+## 1988 Ron Paul Libertarian 0 431750 Andre V. Marrou
+## 1988 Lenora Fulani New Alliance 0 217221 Joyce Dattner
+## 1984 Ronald Reagan Republican 525 54455075 George H.W. Bush
+## 1984 Walter Mondale Democratic 13 37577185 Geraldine Ferraro
+## 1984 David Bergland Libertarian 0 228111 Jim Lewis
+## 1980 Ronald Reagan Republican 489 43904153 George H.W. Bush
+## 1980 Jimmy Carter Democratic 49 35483883 Walter Mondale
+## 1980 John Anderson Independent 0 5719437 Patrick Lucey
+## 1980 Edward Clark Libertarian 0 920049 David Koch
+## 1980 Barry Commoner Citizens 0 232538 LaDonna Harris
+## 1976 Jimmy Carter Democratic 297 40830763 Walter Mondale
+## 1976 Gerald R. Ford Republican 240 39147793 Bob Dole
+## 1976 Ronald Reagan Republican 1 NULL Bob Dole
+## 1976 Eugene J. McCarthy Independent 0 756631 NULL
+## 1976 Roger MacBride Libertarian 0 172553 David Bergland
+## 1976 Lester Maddox American Independent 0 170274 William Dyke
+## 1976 Thomas J. Anderson American 0 158271 Rufus Shackelford
+##  Gerald Ford Republican none none Nelson Rockefeller
+## 1972 Richard Nixon Republican 520 47169911 Spiro Agnew
+## 1972 George McGovern Democratic 17 29170383 Sargent Shriver
+## 1972 John Hospers Libertarian 1 3674 Theodora Nathan
+## 1972 John Schmitz American 0 1100868 Thomas J. Anderson
+## 1968 Richard Nixon Republican 301 31785480 Spiro Agnew
+## 1968 Hubert Humphrey Democratic 191 31275166 Edmund Muskie
+## 1968 George Wallace American Independent 46 9906473 Curtis LeMay
+## 1964 Lyndon Johnson Democratic 486 43129566 Hubert Humphrey
+## 1964 Barry Goldwater Republican 52 27178188 William Miller
+## 1960 John F. Kennedy Democratic 303 34226731 Lyndon Johnson
+## 1960 Richard Nixon Republican 219 34108157 Henry Lodge
+## 1960 Harry F. Byrd Independent 15 0 Strom Thurmond
+## 1956 Dwight Eisenhower Republican 457 35590472 Richard Nixon
+## 1956 Adlai Stevenson Democratic 73 26022752 Estes Kefauver
+## 1956 Walter Jones Democratic 1 0 Herman Talmadge
+## 1956 T. Coleman Andrews State\'s Rights 0 107929 Thomas Werdel
+## 1952 Dwight Eisenhower Republican 442 33936234 Richard Nixon
+## 1952 Adlai Stevenson Democratic 89 27314992 John Sparkman
+## 1952 Vincent Hallinan Progressive 0 140746 Charlotta Bass
+## 1948 Harry S. Truman Democratic 303 24179345 Alben Barkley
+## 1948 Thomas Dewey Republican 189 21991291 Earl Warren
+## 1948 Strom Thurmond State\'s Rights 39 1169021 Fielding Wright
+## 1948 Henry Wallace Progressive 0 1157172 Glen Taylor
+## 1948 Norman Thomas Socialist 0 139569 Tucker Smith
+## 1948 Claude A. Watson Prohibition 0 103708 Dale Learn
+## 1944 Franklin D. Roosevelt Democratic 432 25612610 Harry Truman
+## 1944 Thomas Dewey Republican 99 22117617 John Bricker
+## 1940 Franklin D. Roosevelt Democratic 449 27313041 Henry Wallace
+## 1940 Wendell Willkie Republican 82 22348480 Charles McNary
+## 1940 Norman Thomas Socialist 0 116599 Maynard Krueger
+## 1936 Franklin D. Roosevelt Democratic 523 27757333 John Garner
+## 1936 Alfred Landon Republican 8 16684231 Frank Knox
+## 1936 William Lemke Union 0 892378 Thomas O\'Brian
+## 1936 Norman Thomas Socialist 0 187910 George Nelson
+## 1932 Franklin D. Roosevelt Democratic 472 22829501 John Garner
+## 1932 Herbert C. Hoover Republican 59 15760684 Charles Curtis
+## 1932 Norman Thomas Socialist 0 884781 James Maurer
+## 1932 William Foster Communist 0 103307 James Ford
+## 1928 Herbert C. Hoover Republican 444 21437277 Charles Curtis
+## 1928 Alfred E. Smith Democratic 87 15007698 Joseph Robinson
+## 1928 Norman Thomas Socialist 0 267478 James Maurer
+## 1924 Calvin Coolidge Republican 382 15719921 Charles Dawes
+## 1924 John Davis Democratic 136 8386704 Charles Bryan
+## 1924 Robert LaFollette Progressive 13 4822856 Burton Wheeler
+## 1920 Warren G. Harding Republican 404 16153115 Calvin Coolidge
+## 1920 James Cox Democratic 127 9133092 Franklin D. Roosevelt
+## 1920 Eugene Debs Socialist 0 913693 Seymour Stedman
+## 1920 Parley Christiansen Farmer-Labor 0 265398 Maximilian Hayes
+## 1920 Aaron Watkins Prohibition 0 188787 David Colvin
+## 1916 Woodrow Wilson Democratic 277 9126300 Thomas Marshall
+## 1916 Charles Hughes Republican 254 8546789 Charles Fairbanks
+## 1916 Allan Benson Socialist 0 590524 George Kirkpatrick
+## 1916 James Hanly Prohibition 0 221302 Ira Landrith
+## 1912 Woodrow Wilson Democratic 435 6293152 Thomas Marshall
+## 1912 Theodore Roosevelt Progressive 88 4119207 Hiram Johnson
+## 1912 William Taft Republican 8 3483922 Nicholas Butler
+## 1912 Eugene Debs Socialist 0 901551 Emil Seidel
+## 1912 Eugene Chafin Prohibition 0 208156 Aaron Watkins
+## 1908 William Taft Republican 321 7676258 James Sherman
+## 1908 William Bryan Democratic 162 6406801 John Kern
+## 1908 Eugene Debs Socialist 0 420852 Benjamin Hanford
+## 1908 Eugene Chafin Prohibition 0 254087 Aaron Watkins
+## 1904 Theodore Roosevelt Republican 336 7626593 Charles Fairbanks
+## 1904 Alton Parker Democratic 140 5082898 Henry Davis
+## 1904 Eugene Debs Socialist 0 402810 Benjamin Hanford
+## 1904 Silas Swallow Prohibition 0 259103 George Carroll
+## 1904 Thomas Watson Populist 0 114062 Thomas Tibbles
+## 1900 William McKinley Republican 292 7218039 Theodore Roosevelt
+## 1900 William Bryan Democratic 155 6358345 Adlai Stevenson
+## 1900 John Woolley Prohibition 0 210867 Henry Metcalf
+## 1896 William McKinley Republican 271 7108480 Garret Hobart
+## 1896 William Bryan Democratic/Populist 176 6511495 Arthur Sewall
+## 1896 John Palmer National Democrat 0 133537 Thomas Watson
+## 1896 Joshua Levering Prohibition 0 124896 Simon Buckner
+## 1892 Grover Cleveland Democratic 277 5551883 Adlai Stevenson
+## 1892 Benjamin Harrison Republican 145 5179244 Whitelaw Reid
+## 1892 James Baird Weaver Populist 22 1027329 James Field
+## 1892 John Bidwell Prohibition 0 270889 James Cranfill
+## 1888 Benjamin Harrison Republican 233 5443892 Levi Morton
+## 1888 Grover Cleveland Democratic 168 5534488 Allen Thurman
+## 1888 Clinton Fisk Prohibition 0 250017 John Brooks
+## 1888 Alson Streeter Union Labor 0 149115 Charles Cunningham
+## 1884 Grover Cleveland Democratic 219 4874621 Thomas Hendricks
+## 1884 James G. Blaine Republican 182 4848936 John Logan
+## 1884 John St. John Prohibition 0 150890 William Daniel
+## 1884 Benjamin Butler Greenback 0 134294 Absolom West
+##  Chester Arthur Republican NA NULL NULL
+## 1880 James Garfield Republican 214 4446158 Chester Arthur
+## 1880 Winfield S. Hancock Democratic 155 4444260 William English
+## 1880 James Baird Weaver Greenback 0 306135 Benjamin Chambers
+## 1876 Rutherford B. Hayes Republican 185 4034311 William Wheeler
+## 1876 Samuel Tilden Democratic 184 4288546 Thomas Hendricks
+## 1872 Ulysses S. Grant Republican 286 3598235 Henry Wilson
+## 1872 Horace Greeley Democratic 0 2834761 B. Gratz Brown
+## 1872 B. Gratz Brown Democratic 18 NULL NULL
+## 1872 Thomas Hendricks Democratic 42 NULL NULL
+## 1872 Charles Jenkins Democratic 2 NULL NULL
+## 1872 David Davis Liberal Republican 1 NULL NULL
+## 1868 Ulysses S. Grant Republican 214 3013650 Schuyler Colfax
+## 1868 Horatio Seymour Democratic 80 2708744 Francis Blair, Jr.
+##  Andrew Johnson Republican NA NULL NULL
+## 1864 Abraham Lincoln Republican 212 2218388 Andrew Johnson
+## 1864 George B. McClellan Democratic 21 1812807 George Pendleton
+## 1860 Abraham Lincoln Republican 180 1865908 Hannibal Hamlin
+## 1860 John C. Breckinridge Southern Democrat 72 848019 Joseph Lane
+## 1860 John Bell Constitutional Union 39 590946 Edward Everett
+## 1860 Stephen Douglas Democratic 12 1381944 Herschel Johnson
+## 1856 James Buchanan Democratic 174 1836072 John Breckenridge
+## 1856 John Frémont Republican 114 1342345 William Dayton
+## 1856 Millard Fillmore Whig-American 8 872703 Andrew Donelson
+## 1852 Franklin Pierce Democratic 254 1607510 William King
+## 1852 Winfield Scott Whig 42 1386942 William Graham
+## 1852 John Hale Free Soil 0 155799 George Julian
+##  Millard Fillmore Whig NA NULL NULL
+## 1848 Zachary Taylor Whig 163 1361393 Millard Fillmore
+## 1848 Lewis Cass Democratic 127 1223460 William O. Butler
+## 1848 Martin Van Buren Free Soil 0 29147 Charles F. Adams
+## 1844 James K. Polk Democratic 170 1339494 George M. Dallas
+## 1844 Henry Clay Whig 105 1300004 Theodore Frelinghuysen
+##  John Tyler Whig NA NULL NULL
+## 1840 William Henry Harrison Whig 234 1275390 John Tyler
+## 1840 Martin Van Buren Democratic 60 1128854 NULL
+## 1836 Martin Van Buren Democratic 170 764176 Richard Johnson
+## 1836 William H. Harrison Whig 73 550816 NULL
+## 1836 Hugh L. White Whig 26 146107 NULL
+## 1836 Daniel Webster Whig 14 41201 NULL
+## 1836 William P. Mangum Whig 11 0 NULL
+## 1832 Andrew Jackson Democratic 219 701780 Martin Van Buren
+## 1832 John Floyd National Republican 49 484205 NULL
+## 1832 William Wirt Ind. Democrat 11 0 NULL
+## 1828 Andrew Jackson Democratic 178 642553 John Calhoun
+## 1828 John Quincy Adams National Republican 83 500897 NULL
+## 1824 John Quincy Adams Democratic-Republican 84 113122 John Calhoun
+## 1824 Andrew Jackson Democratic-Republican 91 151271 NULL
+## 1824 William H. Crawford Democratic-Republican 41 41032 NULL
+## 1824 Henry Clay Democratic-Republican 37 47545 NULL
+## 1820 James Monroe Democratic-Republican 231 NULL Daniel Tompkins
+## 1820 John Quincy Adams Republican 1 NULL NULL
+## 1816 James Monroe Democratic-Republican 183 NULL Daniel Tompkins
+## 1816 Rufus King Federalist 34 NULL NULL
+## 1812 James Madison Democratic-Republican 128 NULL Elbridge Gerry
+## 1812 De Witt Clinton Federalist 89 NULL NULL
+## 1808 James Madison Democratic-Republican 122 NULL George Clinton
+## 1808 Charles C. Pinckney Federalist 47 NULL NULL
+## 1808 George Clinton Democratic-Republican 6 NULL NULL
+## 1804 Thomas Jefferson Democratic-Republican 162 NULL George Clinton
+## 1804 Charles C. Pinckney Federalist 14 NULL NULL
+## 1800 Thomas Jefferson Democratic-Republican 73 NULL Aaron Burr
+## 1800 Aaron Burr Democratic-Republican 73  NULL NULL
+## 1800 John Adams Federalist 65  NULL NULL
+## 1800 Charles C. Pinckney Federalist 64  NULL NULL
+## 1800 John Jay Federalist 1 NULL NULL
+## 1796 John Adams Federalist 71 NULL Thomas Jefferson
+## 1796 Thomas Jefferson Democratic-Republican 68 NULL NULL
+## 1796 Thomas Pinckney Federalist 59 NULL NULL
+## 1796 Aaron Burr Democratic-Republican 30 NULL NULL
+## 1796 Samuel Adams Democratic-Republican 15 NULL NULL
+## 1796 O. Ellsworth Federalist 11 NULL NULL
+## 1796 George Clinton Democratic-Republican 7 NULL NULL
+## 1796 John Jay Federalist 5 NULL NULL
+## 1796 James Iredell Federalist 3 NULL NULL
+## 1796 S. Johnston Independent 2 NULL NULL
+## 1796 George Washington Democratic-Republican 2 NULL NULL
+## 1796 John Henry Federalist 2 NULL NULL
+## 1796 Charles C. Pinckney Federalist 1 NULL NULL
+## 1792 George Washington Federalist 132 NULL John Adams
+## 1792 John Adams Federalist 77 NULL NULL
+## 1792 George Clinton Anti-Federalist 50 NULL NULL
+## 1792 Thomas Jefferson Anti-Federalist 4 NULL NULL
+## 1792 Aaron Burr Anti-Federalist 1 NULL NULL
+## 1789 George Washington none 69 NULL John Adams
+## 1789 John Adams none 34 NULL NULL
+## 1789 John Jay none 9 NULL NULL
+## 1789 Robert H. Harrison none 6 NULL NULL
+## 1789 John Rutledge none 6 NULL NULL
+## 1789 John Hancock none 4 NULL NULL
+## 1789 George Clinton none 3 NULL NULL
+## 1789 Samuel Huntington none 2 NULL NULL
+## 1789 John Milton none 2 NULL NULL
+## 1789 James Armstrong none 1 NULL NULL
+## 1789 Benjamin Lincoln none 1 NULL NULL
+## 1789 Edward Telfair none 1 NULL NULL</code></pre>
+<pre class="r"><code>emptyList&lt;-list()
+candList &lt;- union(candList, emptyList) # Set operations to remove duplicates
+partyList &lt;- union(partyList, emptyList) 
 
-# convert those columns into integers
-president_table &lt;- president_table %&gt;% readr::type_convert(col_types = cols(
-  W_Electoral_Votes = col_integer(),
-  Total_Electoral_Votes = col_integer()
+# Now let's write all parties to a file as a sql command
+fileConn &lt;- &quot;party.txt&quot;
+write(&quot;DROP TABLE IF EXISTS `party`;&quot;, fileConn)
+write(&quot;INSERT INTO `parsdsty` (`name`) VALUES &quot;, fileConn, append = TRUE)
+for (k in 1:length(partyList)){
+  if (k == length(partyList)) {
+    write(sprintf(&quot;('%s')&quot;, partyList[[k]]), fileConn, append=TRUE)
+  } else {
+    write(sprintf(&quot;('%s'), &quot;, partyList[[k]]), fileConn, append=TRUE)
+  }
+}
+
+# Now let's write all candidates to a file as a sql command
+fileConn &lt;- &quot;candidate.txt&quot;
+write(&quot;DROP TABLE IF EXISTS `candidate`;&quot;, fileConn)
+write(&quot;INSERT INTO `candidate` (`name`) VALUES &quot;, fileConn, append = TRUE)
+for (k in 1:length(candList)){
+  if (k == length(candList)) {
+    write(sprintf(&quot;('%s')&quot;, candList[[k]]), fileConn, append=TRUE)
+  } else {
+    write(sprintf(&quot;('%s'), &quot;, candList[[k]]), fileConn, append=TRUE)
+  }
+}</code></pre>
+<div id="scraping-more-info-about-candidates-in-the-candidatescrape.r-file" class="section level3">
+<h3>Scraping more info about candidates in the candidateScrape.R file</h3>
+<p>The candidate.txt file that we generate about is not used in our DB implemenation. Instead, the script <strong>candidateScrape.R</strong> makes the SQL file for candidates called <strong>candidate2.txt</strong>. We however modify this file again by hand and finally use the <strong>candidate_best.txt</strong> file as part of our DB implementation.</p>
+</div>
+</div>
+<div id="scrape-populationcensus-table" class="section level1">
+<h1>Scrape Population/Census Table</h1>
+<p><strong>The next section will create population.txt and population_best.txt.</strong> We will be using <strong>population_best.txt</strong> for our database. We scrape census population data for every 10 years starting from 1610. The following data can be found from this wikipedia article <a href="https://en.wikipedia.org/wiki/Demographic_history_of_the_United_States#Historical_population">here</a>.</p>
+<pre class="r"><code>url &lt;- 'https://en.wikipedia.org/wiki/Demographic_history_of_the_United_States#Historical_population'
+xpath &lt;- '//*[@id=&quot;mw-content-text&quot;]/table[2]'
+
+census &lt;- read_html(url)
+
+census_table &lt;- census %&gt;% html_node(xpath = xpath) %&gt;% html_table()
+
+# remove last row
+census_table &lt;- census_table[2:nrow(census_table),]
+
+# pdf source: http://www2.census.gov/prod2/statcomp/documents/CT1970p2-13.pdf</code></pre>
+<div id="stip-commas-from-numbers" class="section level3">
+<h3>Stip commas from numbers</h3>
+<p>We need to strip the commas from the population data before we can store it via sql</p>
+<pre class="r"><code>census_table$Population &lt;- gsub(&quot;,&quot;,&quot;&quot;, census_table$Population)</code></pre>
+<p>Now lets write the table as an SQL entry file</p>
+<pre class="r"><code># Now let's write the census to a file as a sql command
+fileConn &lt;- &quot;population.txt&quot;
+write(&quot;INSERT INTO `population` (`year`, `population`) VALUES &quot;, fileConn)
+for (k in 1:nrow(census_table)){
+  if (k &lt; nrow(census_table)) {
+    write(sprintf(&quot;('%s', '%s'), &quot;, census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
+  } else {
+    write(sprintf(&quot;('%s', '%s')&quot;, census_table[k,1],census_table[k,2]), fileConn, append=TRUE)
+  }
+}</code></pre>
+</div>
+<div id="manually-adding-population-data-for-election-years." class="section level3">
+<h3>Manually adding population data for election years.</h3>
+<p>For election years, we will manually add the folling data for population. We only had census data for every 10 years before but we would like to have population for years where elections took place as well. The text below is appended to the <strong>population.txt</strong> file and saved into a new file called <strong>population_best.txt</strong></p>
+<pre class="txt"><code>('1789', '3804342'),
+('1792', '4172906'),
+('1796', '4706570'),
+('1804', '6010005'),
+('1808', '6804234'),
+('1812', '7666314'),
+('1816', '8596011'),
+('1824', '10818875'),
+('1828', '12143863'),
+('1832', '13614425'),
+('1836', '15244369'),
+('1844', '19295948'),
+('1848', '21812961'),
+('1852', '24647586'),
+('1856', '27838857'),
+('1864', '34116504'),
+('1868', '37016949'),
+('1872', '40645925'),
+('1876', '45166214'),
+('1884', '54959988'),
+('1888', '60184258'),
+('1892', '65408007'),
+('1896', '70548968'),
+('1904', '82166000'),
+('1908', '88710000'),
+('1912', '95335000'),
+('1916', '101961000'),
+('1924', '114109000'),
+('1928', '120509000'),
+('1932', '124840471'),
+('1936', '128053180'),
+('1944', '138397345'),
+('1948', '146631302'),
+('1952', '157552740'),
+('1956', '168903031'),
+('1964', '191888791'),
+('1968', '200706052'),
+('1972', '209896021'),
+('1976', '218035164'),
+('1984', '235824902'),
+('1988', '244498982'),
+('1992', '254994517'),
+('1996', '265189794'),
+('2004', '293045739'),
+('2008', '304374846'),
+('2012', '314100000');</code></pre>
+</div>
+</div>
+<div id="scraping-polling-data" class="section level1">
+<h1>Scraping Polling Data</h1>
+<div id="original-api-sources-for-csv-files." class="section level3">
+<h3>Original API sources for csv files.</h3>
+<p>We are getting our sources from <a href="https://pollyvote.com/en/about/data/">pollyvote.com</a>. Below is the list of URLs for API calls to get the csv for our data. Note that data for polls is only available from the 1940 election (that is when polling data became widely available and popular). This is expected and the best data we can get.</p>
+<pre class="r"><code># national expectation polls 2016
+nep16 &lt;- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?time=current&amp;type=expectations&amp;format=csv' 
+# national intention polls 2016
+nip16 &lt;- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?time=current&amp;type=polls&amp;format=csv'
+
+# national expectation polls historical (1940 - 2012)
+neph &lt;- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?type=expectations&amp;format=csv'
+
+# national intention polls historical (1940 - 2012)
+niph &lt;- 'pollyvote.com/wp-content/plugins/pollyvote/data/index.php?type=polls&amp;format=csv'</code></pre>
+</div>
+<div id="importdownload-the-csv-from-these-urls" class="section level3">
+<h3>Import/Download the csv from these URLs</h3>
+<p>We make a function to download given a URL and make a dataframe as well as a .csv file.</p>
+<pre class="r"><code># filename: the name you want to download and save the csv as.
+# df.name: the name of the dataframe for the csv you want
+# source.URL: the url source that we download from
+download_polls &lt;- function(filename, df.name, source.URL) {
+  if (!file.exists(filename)) {
+    download.file(source.URL, destfile=filename)
+  }
+  assign(x = df.name, value = read_csv(filename), envir = .GlobalEnv)
+}</code></pre>
+<p><strong>Next, we call the function above on all the polling data we want</strong></p>
+<pre class="r"><code># national expectation polls 2016
+download_polls(filename = '2016_national_expectation_polls.csv', 
+               df.name = 'national_expectation_polls.2016',
+               source.URL = nep16)
+
+# national intention polls 2016
+download_polls(filename = '2016_national_intention_polls.csv', 
+               df.name = 'national_intention_polls.2016',
+               source.URL = nip16)
+
+# national expectation polls historical (1940 - 2012)
+download_polls(filename = 'historic_national_expectation_polls.csv', 
+               df.name = 'national_expectation_polls.historic',
+               source.URL = neph)
+
+# national intention polls historical (1940 - 2012)
+download_polls(filename = 'historic_national_intention_polls.csv', 
+               df.name = 'national_intention_polls.historic',
+               source.URL = niph)</code></pre>
+</div>
+<div id="only-select-the-columns-we-care-about" class="section level3">
+<h3>Only select the columns we care about</h3>
+<p>The original CSV gives us an astounding <strong>43</strong> columns of data. A lot of these columns have empty (i.e. NULL) data and are not interesting and usefull to us. We will only select the relevant ones below</p>
+<ul>
+<li>electionyear</li>
+<li>fcdate</li>
+<li>daystoelection</li>
+<li>fcrepvs</li>
+<li>fcdemvs</li>
+<li>fcerror</li>
+<li>absolutefcerror</li>
+<li>lastsurveyday</li>
+<li>firstsurveyday</li>
+<li>released</li>
+<li>sample</li>
+<li>moe</li>
+<li>questiontxt</li>
+<li>surveyorg</li>
+<li>surveysponsor</li>
+<li>intmethod</li>
+<li>sampledesc</li>
+<li>state</li>
+</ul>
+<pre class="r"><code># selects only relevant/good columns from the initial list of 43 columns that we get from the csv
+selectGoodColumns &lt;- function(df.name, list.of.columns) {
+                              df.name %&gt;% select(c(electionyear, 
+                                                   fcdate,              # forecast date
+                                                   daystoelection,      # the number of days until the election
+                                                   fcrepvs,             # republican voter share
+                                                   fcdemvs,             # democratic voter share
+                                                   fcerror,             # forecase error (Forecast – Actual)
+                                                   absolutefcerror,     # absolute forecast error
+                                                   lastsurveyday,       # last day survey was conducted
+                                                   firstsurveyday,      # first day survey was conducted
+                                                   released,            # date survey was released
+                                                   sample,              # sample size of survey
+                                                   moe,                 # margin of error of survey
+                                                   questiontxt,         # question text description of survey
+                                                   surveyorg,           # survey organization
+                                                   surveysponsor,       # survey sponsor
+                                                   intmethod,           # interview method
+                                                   sampledesc,          # information about the sample of respondents
+                                                   state))
+}
+
+# national expectation polls 2016
+national_expectation_polls.2016 &lt;- selectGoodColumns(national_expectation_polls.2016)
+national_expectation_polls.2016 &lt;- national_expectation_polls.2016 %&gt;% mutate(pollType = &quot;expectation&quot;)
+
+# national intention polls 2016
+national_intention_polls.2016 &lt;- selectGoodColumns(national_intention_polls.2016)
+national_intention_polls.2016 &lt;- national_intention_polls.2016 %&gt;% mutate(pollType = &quot;intention&quot;)
+
+# national expectation polls historical (1940 - 2012)
+national_expectation_polls.historic &lt;- selectGoodColumns(national_expectation_polls.historic)
+national_expectation_polls.historic &lt;- national_expectation_polls.historic %&gt;% mutate(pollType = &quot;expectation&quot;)
+
+# national intention polls historical (1940 - 2012)
+national_intention_polls.historic &lt;- selectGoodColumns(national_intention_polls.historic)
+national_intention_polls.historic &lt;- national_intention_polls.historic %&gt;% mutate(pollType = &quot;intention&quot;)</code></pre>
+</div>
+<div id="convert-some-columns-before-sql-insertion" class="section level3">
+<h3>Convert some columns before sql insertion</h3>
+<p>Some of the original columns have dates stored with ‘.’ seperating the month, day, and year. We need to convert these to dashes. We do this below for each of the dataframes using <strong>readr::type_convert</strong> function.</p>
+<pre class="r"><code># national expectation polls 2016
+national_expectation_polls.2016 &lt;- 
+  national_expectation_polls.2016 %&gt;% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    lastsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    firstsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    released = col_datetime(format=&quot;%d.%m.%Y&quot;)
 ))
 
-# remove the electoral percentage column
-president_table &lt;- president_table %&gt;% select(-Electoral_Percentage)
+# national intention polls 2016
+national_intention_polls.2016 &lt;- 
+  national_intention_polls.2016 %&gt;% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    lastsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    firstsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    released = col_datetime(format=&quot;%d.%m.%Y&quot;)
+))
 
-# take a look
-president_table %&gt;% select(Winner, W_Electoral_Votes, Total_Electoral_Votes) %&gt;% head()</code></pre>
-<pre><code>## # A tibble: 6 × 3
-##                       Winner W_Electoral_Votes Total_Electoral_Votes
-##                       &lt;fctr&gt;             &lt;int&gt;                 &lt;int&gt;
-## 1    Adams,John Quincy Adams                84                   261
-## 2     Hayes,Rutherford Hayes               185                   369
-## 3         Trump,Donald Trump               306                   538
-## 4 Harrison,Benjamin Harrison               233                   401
-## 5        Bush,George W. Bush               271                   538
-## 6    Garfield,James Garfield               214                   369</code></pre>
+# national expectation polls historical (1940 - 2012)
+national_expectation_polls.historic &lt;- 
+  national_expectation_polls.historic %&gt;% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    lastsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    firstsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    released = col_datetime(format=&quot;%d.%m.%Y&quot;)
+))
+
+# national intention polls historical (1940 - 2012)
+national_intention_polls.historic &lt;- 
+  national_intention_polls.historic %&gt;% readr::type_convert(col_types = cols(
+    fcdate = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    lastsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    firstsurveyday = col_datetime(format=&quot;%d.%m.%Y&quot;),
+    released = col_datetime(format=&quot;%d.%m.%Y&quot;)
+))</code></pre>
+</div>
+<div id="build-the-sql-file" class="section level3">
+<h3>Build the SQL file</h3>
+<p>In the code block below, we create the <strong>polls.txt</strong> file and create the <strong>polls</strong> relation. We define the column names and</p>
+<pre class="r"><code>pollsFile &lt;- &quot;polls.txt&quot;
+write(&quot;DROP TABLE IF EXISTS `polls`;&quot;, pollsFile)
+write(&quot;CREATE TABLE presidential_elections.polls (election_year VARCHAR(64) NOT NULL, 
+                                                  fc_date DATE, 
+                                                  days_to_election DATE, 
+                                                  fc_repvs FLOAT,
+                                                  fc_demvs FLOAT,
+                                                  fc_error FLOAT,
+                                                  fc_absolute_error FLOAT,
+                                                  last_survey_day DATE,
+                                                  first_survey_day DATE,
+                                                  release_day DATE,
+                                                  sample INTEGER,
+                                                  moe FLOAT,
+                                                  question TEXT,
+                                                  survey_org VARCHAR(64),
+                                                  survey_sponser VARCHAR(128),
+                                                  intmethod VARCHAR(30),
+                                                  sample_desc TEXT,
+                                                  state VARCHAR(40),
+                                                  poll_type VARCHAR(15));&quot;, 
+pollsFile,
+append = TRUE)
+
+write(&quot;INSERT INTO polls (                        election_year, 
+                                                  fc_date, 
+                                                  days_to_election, 
+                                                  fc_repvs,
+                                                  fc_demvs,
+                                                  fc_error,
+                                                  fc_absolute_error,
+                                                  last_survey_day,
+                                                  first_survey_day,
+                                                  release_day,
+                                                  sample,
+                                                  moe,
+                                                  question,
+                                                  survey_org,
+                                                  survey_sponser,
+                                                  intmethod,
+                                                  sample_desc,
+                                                  state,
+                                                  poll_type) VALUES &quot;,
+pollsFile, 
+append=TRUE)</code></pre>
+</div>
+<div id="write-the-poll-tuples" class="section level3">
+<h3>Write the poll tuples</h3>
+<p>We will now loop through the four dataframes we have created convert the rows into mysql insert statements as well as define/create the relation for the table we will need (polls). <strong>Just a note: at the end of the text file you should remove the last comma and replace it with a semicolon.</strong></p>
+<pre class="r"><code># writeFD: function to write the tuples of each dataframe (df) to the polls.txt file
+writeFD &lt;- function(df) {
+    for(i in 1:nrow(df)) {
+      electionyear &lt;-   df$electionyear
+      fcdate &lt;-         df$fcdate
+      daystoelection &lt;- df$daystoelection
+      fcrepvs &lt;-        df$fcrepvs
+      fcdemvs &lt;-        df$fcdemvs
+      fcerror &lt;-        df$fcerror
+      absolutefcerror &lt;-df$absolutefcerror
+      lastsurveyday &lt;-  df$lastsurveyday
+      firstsurveyday &lt;- df$firstsurveyday
+      released &lt;-       df$released
+      sample &lt;-         df$sample
+      moe &lt;-            df$moe
+      questiontxt &lt;-    gsub(x = df$questiontxt, pattern = &quot;\'&quot;, replacement = &quot;&quot;)
+      surveyorg &lt;-      gsub(x = df$surveyorg, pattern = &quot;\'&quot;, replacement = &quot;&quot;)
+      surveysponsor &lt;-  gsub(x = df$surveysponsor, pattern = &quot;\'&quot;, replacement = &quot;&quot;)
+      intmethod &lt;-      gsub(x = df$intmethod, pattern = &quot;\'&quot;, replacement = &quot;&quot;)
+      sampledesc &lt;-     gsub(x = df$sampledesc, pattern = &quot;\'&quot;, replacement = &quot;&quot;)
+      state &lt;-          df$state
+      pollType &lt;-       df$pollType
+    
+      # replace the NAs with NULL and sprintf into apporpriate format
+      write(
+      gsub(x = sprintf(
+      &quot;('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'),&quot;,
+                    electionyear[i],
+                    fcdate[i],
+                    daystoelection[i],
+                    fcrepvs[i],
+                    fcdemvs[i],
+                    fcerror[i],
+                    absolutefcerror[i],
+                    lastsurveyday[i],
+                    firstsurveyday[i],
+                    released[i],
+                    sample[i],
+                    moe[i],
+                    questiontxt[i],
+                    surveyorg[i],
+                    surveysponsor[i],
+                    intmethod[i],
+                    sampledesc[i],
+                    state[i],
+                    pollType[i]),
+      pattern=&quot;NA&quot;,
+      replacement = &quot;NULL&quot;),
+      pollsFile, append=TRUE)
+    }
+}
+
+writeFD(national_expectation_polls.2016)
+writeFD(national_intention_polls.2016)
+writeFD(national_expectation_polls.historic)
+writeFD(national_intention_polls.historic)</code></pre>
+</div>
 </div>
 
 
