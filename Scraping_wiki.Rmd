@@ -11,9 +11,11 @@ The following document describes how we obtained and went through the **ETL** pr
 * election.txt (use this one)
 * participated.txt (use this one)
 * party.txt (use this one)
-* candidate.txt (use this one)
+* candidate.txt
+* candidate2.txt
+* candidate_best.txt (use this one)
 * population.txt
-* population.txt (use this one)
+* population_best.txt (use this one)
 * polls.txt (use this one)
 
 ### Files not made by this document
@@ -53,7 +55,11 @@ participatedFile <- "participated.txt"
 
 # drop if tables exist
 write("DROP TABLE IF EXISTS `election`;", electionFile)
-write("DROP TABLE IF EXISTS `participated`;", participatedFile, append = TRUE)
+write("DROP TABLE IF EXISTS `participated`;", participatedFile)
+
+# create tables
+write("CREATE TABLE presidential_elections.election (year date NOT NULL, winner VARCHAR(64), num INTEGER);",  electionFile, append = TRUE)
+write("CREATE TABLE presidential_elections.participated (year date NOT NULL, candidate VARCHAR(64), party VARCHAR(64), electoral_vote INTEGER, popular_vote INTEGER, vice_president VARCHAR(64));",  participatedFile, append = TRUE)
 
 # Write initial sql text to file
 write("INSERT INTO `election` (`year`, `winner`, `num`) VALUES ", electionFile, append = TRUE)
@@ -154,7 +160,8 @@ partyList <- union(partyList, emptyList)
 # Now let's write all parties to a file as a sql command
 fileConn <- "party.txt"
 write("DROP TABLE IF EXISTS `party`;", fileConn)
-write("INSERT INTO `parsdsty` (`name`) VALUES ", fileConn, append = TRUE)
+write("CREATE TABLE presidential_elections.party (name VARCHAR(64) NOT NULL);",  fileConn, append = TRUE)
+write("INSERT INTO `party` (`name`) VALUES ", fileConn, append = TRUE)
 for (k in 1:length(partyList)){
   if (k == length(partyList)) {
     write(sprintf("('%s')", partyList[[k]]), fileConn, append=TRUE)
@@ -166,6 +173,7 @@ for (k in 1:length(partyList)){
 # Now let's write all candidates to a file as a sql command
 fileConn <- "candidate.txt"
 write("DROP TABLE IF EXISTS `candidate`;", fileConn)
+write("CREATE TABLE presidential_elections.candidate (name VARCHAR(64) NOT NULL);",  fileConn, append = TRUE)
 write("INSERT INTO `candidate` (`name`) VALUES ", fileConn, append = TRUE)
 for (k in 1:length(candList)){
   if (k == length(candList)) {
