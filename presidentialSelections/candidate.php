@@ -103,14 +103,14 @@ function candidate_query($candidate) {
 	
 	echo "<table border='1' align='center'>
 	<tr>
-	<th>Election Number</th>
-	<th>Year</th>
-	<th>Candidate</th>
-	<th>Party</th>
-	<th>Electoral Vote</th>
-	<th>Popular Vote</th>
-	<th>Vice President</th>
-	<th>Election Winner</th>
+	<th style=\"text-align:center\">Election Number</th>
+	<th style=\"text-align:center\">Year</th>
+	<th style=\"text-align:center\">Candidate</th>
+	<th style=\"text-align:center\">Party</th>
+	<th style=\"text-align:center\">Electoral Vote</th>
+	<th style=\"text-align:center\">Popular Vote</th>
+	<th style=\"text-align:center\">Vice President</th>
+	<th style=\"text-align:center\">Election Winner</th>
 	</tr>";
 	echo "<tr>";
 	
