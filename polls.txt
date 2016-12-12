@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS `polls`;
 CREATE TABLE presidential_elections.polls (election_year VARCHAR(64) NOT NULL, 
                                                   fc_date DATE, 
-                                                  days_to_election DATE, 
+                                                  days_to_election INTEGER, 
                                                   fc_repvs FLOAT,
                                                   fc_demvs FLOAT,
                                                   fc_error FLOAT,
