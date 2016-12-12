@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS `participated`;
-CREATE TABLE presidential_elections.participated (year date NOT NULL, candidate VARCHAR(64), party VARCHAR(64), electoral_vote INTEGER, popular_vote INTEGER, vice_president VARCHAR(64));
+CREATE TABLE presidential_elections.participated (year INTEGER NOT NULL, candidate VARCHAR(64), party VARCHAR(64), electoral_vote INTEGER, popular_vote INTEGER, vice_president VARCHAR(64));
 INSERT INTO `participated` (`year`, `candidate`, `party`, `electoral_vote`, `popular_vote`, `vice_president`) VALUES 
 ('2012', 'Barack Obama', 'Democratic', '332', '65899660', 'Joe Biden'), 
 ('2012', 'Mitt Romney', 'Republican', '206', '60932152', 'Paul Ryan'), 
