@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS candidate_info;
+CREATE TABLE presidential_elections.candidate_info( name VARCHAR(64) NOT NULL , info VARCHAR(512) );
+INSERT INTO candidate_info (name, info) VALUES 
+('John Tyler', '*William Henry Harrison died of pneumonia on Apr. 4, 1841. He was succeeded by John Tyler, who became the first Vice President to be elevated to the office of President by the death of his predecessor.'),
+('Millard Fillmore', '*Zachary Taylor died July 9, 1850 in Washington DC; he became sick after eating cherries and milk at a July 4 celebration. He was succeeded by Millard Fillmore.'),
+('Andrew Johnson', '*Abraham Lincoln was assassinated on Apr. 14, 1865. He was succeeded by Andrew Johnson.'),
+('Chester Arthur', '*James Garfield was shot July 2, 1881 and died Sep. 19, 1881. He was succeeded by Chester Arthur.'),
+('Calvin Coolidge', '*Warren G. Harding died of a heart attack on Aug. 12, 1923. He was succeeded by Calvin Coolidge, who became the 30th President of the United States.'),
+('Harry S. Truman', '*Franklin D. Roosevelt died of a cerebral hemorrhage Apr. 12, 1945. He was succeeded by Harry Truman, who became the 33rd President of the United States.'),
+('Lyndon Johnson', '*John F. Kennedy was assassinated Nov. 22, 1963. He was succeeded by Lyndon Johnson, who became the 36th President of the United States.'),
+('Gerald R. Ford', '*Richard Nixon resigned as President Aug. 9, 1974. He was succeeded by Gerald Ford.')

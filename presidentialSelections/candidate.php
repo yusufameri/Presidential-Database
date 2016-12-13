@@ -97,6 +97,17 @@ function candidate_query($candidate) {
 			echo "<h1>No Result Found</h1>";
 	}
 	
+	// Display candidate info if it exists
+	$sql = "SELECT * FROM candidate_info c WHERE c.name = \"" . $db->real_escape_string($candidate) . "\"";
+	$result = $db->query($sql);
+
+	if ($result->num_rows > 0) {
+		// output data of each row (should just be 1 row)
+		while($row = $result->fetch_assoc()) {
+			echo "<h4 align='center'>" . $row['info'] . "</h4>";
+		}
+	}
+	
 	// Now display particpation as a candidate
 	$sql = "SELECT * FROM participated p, election e WHERE (p.candidate = \"" . $db->real_escape_string($candidate) . "\" OR p.vice_president = \"" . $db->real_escape_string($candidate) . "\") AND p.year = e.year";
 	$result = $db->query($sql);
