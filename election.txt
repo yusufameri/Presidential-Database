@@ -1,6 +1,8 @@
 DROP TABLE IF EXISTS `election`;
-CREATE TABLE presidential_elections.election (year INTEGER NOT NULL, winner VARCHAR(64), num INTEGER);
-INSERT INTO `election` (`year`, `winner`, `num`) VALUES 
+CREATE TABLE presidential_elections.election 
+      (year INTEGER NOT NULL, winner VARCHAR(64), num INTEGER);
+INSERT INTO `election` 
+      (`year`, `winner`, `num`) VALUES 
 ('2012', 'Barack Obama', '57'), 
 ('2008', 'Barack Obama', '56'), 
 ('2004', 'George W. Bush', '55'), 

@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS `party`;
-CREATE TABLE presidential_elections.party (name VARCHAR(64) NOT NULL);
+CREATE TABLE presidential_elections.party 
+      (name VARCHAR(64) NOT NULL);
 INSERT INTO `party` (`name`) VALUES 
 ('Democratic'), 
 ('Republican'), 
