@@ -160,7 +160,7 @@ INSERT INTO `participated` (`year`, `candidate`, `party`, `electoral_vote`, `pop
 ('1860', 'John Bell', 'Constitutional Union', '39', '590946', 'Edward Everett'), 
 ('1860', 'Stephen Douglas', 'Democratic', '12', '1381944', 'Herschel Johnson'), 
 ('1856', 'James Buchanan', 'Democratic', '174', '1836072', 'John Breckenridge'), 
-('1856', 'John FrÃ©mont', 'Republican', '114', '1342345', 'William Dayton'), 
+('1856', 'John Frémont', 'Republican', '114', '1342345', 'William Dayton'), 
 ('1856', 'Millard Fillmore', 'Whig-American', '8', '872703', 'Andrew Donelson'), 
 ('1852', 'Franklin Pierce', 'Democratic', '254', '1607510', 'William King'), 
 ('1852', 'Winfield Scott', 'Whig', '42', '1386942', 'William Graham'), 
