@@ -22,12 +22,12 @@ function swing_query() {
 	// Make the winner table
 	echo "<table border='1' align='center'>
 	<tr>
-	<th>Year</th>
-	<th>Candidate</th>
-	<th>Party</th>
-	<th>Year</th>
-	<th>Candidate</th>
-	<th>Party</th>
+	<th style=\"text-align:center\">Year</th>
+	<th style=\"text-align:center\">Candidate</th>
+	<th style=\"text-align:center\">Party</th>
+	<th style=\"text-align:center\">Year</th>
+	<th style=\"text-align:center\">Candidate</th>
+	<th style=\"text-align:center\">Party</th>
 	</tr>";
 	echo "<tr>";
 

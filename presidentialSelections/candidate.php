@@ -57,7 +57,7 @@ function build_candidate_selection_box() {
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
 
-	$sql = "SELECT * FROM `candidate` WHERE 1";
+	$sql = "SELECT * FROM `candidate` WHERE 1 ORDER BY name ASC";
 	$result = $db->query($sql);
 	
 	echo "<select id='select_box_id'>";

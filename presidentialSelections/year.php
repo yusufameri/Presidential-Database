@@ -22,7 +22,7 @@ function build_year_selection_box() {
 
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
 
-	$sql = "SELECT * FROM election WHERE 1";
+	$sql = "SELECT * FROM election WHERE 1 ORDER BY year";
 	$result = $db->query($sql);
 	
 	echo "<select id='select_box_id'>";

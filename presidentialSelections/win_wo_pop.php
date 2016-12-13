@@ -17,7 +17,7 @@ function win_wo_pop_query() {
 	$db = new mysqli('localhost', $user, $pass, $db) or die("Unable to connect to database");
 
 	$sql = "SELECT e.year as elec_year, p1.candidate as win_cand, p1.electoral_vote as win_elec, p1.popular_vote as win_pop, p2.candidate as lose_cand, p2.electoral_vote as lose_elec, 
-		p2.popular_vote as lose_pop FROM election e, participated p1, participated p2 WHERE e.year = p1.year AND e.year = p2.year AND e.winner = p1.candidate AND p2.popular_vote > p1.popular_vote";
+		p2.popular_vote as lose_pop FROM election e, participated p1, participated p2 WHERE e.year = p1.year AND e.year = p2.year AND e.winner = p1.candidate AND p2.popular_vote > p1.popular_vote ORDER BY e.year ASC";
 	$result = $db->query($sql);
 	
 	// Make the winner table
